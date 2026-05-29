@@ -392,8 +392,7 @@ export async function runSim() {
       const sel = pool2[Math.floor(rng() * pool2.length)];
       sDol[sel] += h; sPkg[sel] += 1; sIcerik[sel][code] = (sIcerik[sel][code] || 0) + 1;
     }
-    setProgress(48 + chunk * 9, `${t('log_block')} ${chunk + 1}/4`);
-    addLog(`· ${t('log_block')} ${chunk + 1}/4 → <span>${end}/${items.length}</span>`);
+    setProgress(48 + chunk * 9, t('log_dist'));
     await delay(500);
   }
 

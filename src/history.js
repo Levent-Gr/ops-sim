@@ -362,7 +362,7 @@ export function openDeliveryModal(item, src) {
   if (paletDetails.length) {
     paletDetails.forEach(s => {
       const row = document.createElement('div'); row.className = 'sd-row';
-      row.innerHTML = `<div class="sd-name">${safe(s.name)}</div><div class="sd-track"><div class="sd-fill" style="width:${s.pct}%"></div></div><div class="sd-pct">${s.pct}%</div>`;
+      row.innerHTML = `<div class="sd-name">${safe(s.name)}</div><div class="sd-track"><div class="sd-fill" style="width:${s.pct}%"></div></div><div class="sd-pkg">${s.pkg != null ? safe(String(s.pkg)) + ' ' + safe(t('pkg_label').toLowerCase()) : ''}</div><div class="sd-pct">${s.pct}%</div>`;
       paletEl.appendChild(row);
     });
   } else { paletEl.innerHTML = `<div style="font-size:11px;color:var(--muted);font-style:italic">—</div>`; }
