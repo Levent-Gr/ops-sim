@@ -26,6 +26,52 @@ function _getHistById(id) {
   return historyStore.histCache.find(h => h.id === id) || null;
 }
 
+// Katlanabilir geçmiş bölümü oluşturur (akordeon: aynı anda tek bölüm açık).
+// headerInnerHTML: mevcut icon + title + count HTML'i. Döner: { section, body }.
+// İçerik (date-group / item) section'a değil body'ye eklenir.
+function makeHistSection(headerInnerHTML) {
+  const section = document.createElement('div');
+  section.className = 'hist-section';
+
+  const header = document.createElement('div');
+  header.className = 'hist-section-header';
+  header.setAttribute('role', 'button');
+  header.setAttribute('tabindex', '0');
+  header.setAttribute('aria-expanded', 'false');
+  header.innerHTML = headerInnerHTML +
+    `<span class="hist-section-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></span>`;
+
+  const body = document.createElement('div');
+  body.className = 'hist-section-body';
+  const inner = document.createElement('div');
+  inner.className = 'hist-section-body-inner';
+  body.appendChild(inner);
+
+  section.appendChild(header);
+  section.appendChild(body);
+
+  const toggle = () => {
+    const willOpen = !section.classList.contains('open');
+    // Akordeon: tıklanan dışındaki açık bölümleri kapat
+    const list = document.getElementById('historyList');
+    if (list) list.querySelectorAll('.hist-section.open').forEach(s => {
+      if (s !== section) {
+        s.classList.remove('open');
+        const h = s.querySelector('.hist-section-header');
+        if (h) h.setAttribute('aria-expanded', 'false');
+      }
+    });
+    section.classList.toggle('open', willOpen);
+    header.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  };
+  header.addEventListener('click', toggle);
+  header.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+  });
+
+  return { section, body: inner };
+}
+
 export async function deleteHistItem(id, e) {
   if (e) e.stopPropagation();
   await idbDelete(STORES.history, id);
@@ -55,13 +101,10 @@ export async function renderHistory() {
   el.innerHTML = '';
 
   if (tesItems.length) {
-    const tesSec = document.createElement('div');
-    const tesSectionHdr = document.createElement('div'); tesSectionHdr.className = 'hist-section-header';
-    tesSectionHdr.innerHTML = `
+    const { section: tesSec, body: tesBody } = makeHistSection(`
       <div class="hist-section-icon">${svgIconBox('var(--muted)')}</div>
       <div class="hist-section-title">${uiStore.currentLang === 'en' ? 'Deliveries' : 'Teslimatlar'}</div>
-      <div class="hist-section-count">${tesItems.length}</div>`;
-    tesSec.appendChild(tesSectionHdr);
+      <div class="hist-section-count">${tesItems.length}</div>`);
 
     const byDate = {};
     tesItems.forEach(h => { const d = (h.date || '').split(' ')[0] || '—'; if (!byDate[d]) byDate[d] = []; byDate[d].push(h); });
@@ -91,19 +134,16 @@ export async function renderHistory() {
           </div>`;
         dg.appendChild(div);
       });
-      tesSec.appendChild(dg);
+      tesBody.appendChild(dg);
     });
     el.appendChild(tesSec);
   }
 
   if (grpItems.length) {
-    const grpSec = document.createElement('div');
-    const grpSectionHdr = document.createElement('div'); grpSectionHdr.className = 'hist-section-header';
-    grpSectionHdr.innerHTML = `
+    const { section: grpSec, body: grpBody } = makeHistSection(`
       <div class="hist-section-icon">${svgIconFolder('var(--muted)')}</div>
       <div class="hist-section-title">${uiStore.currentLang === 'en' ? 'Archived Groups' : 'Arşivlenen Gruplar'}</div>
-      <div class="hist-section-count">${grpItems.length}</div>`;
-    grpSec.appendChild(grpSectionHdr);
+      <div class="hist-section-count">${grpItems.length}</div>`);
 
     const byDate2 = {};
     grpItems.forEach(h => { const d = (h.archivedAt || '').split(' ')[0] || '—'; if (!byDate2[d]) byDate2[d] = []; byDate2[d].push(h); });
@@ -141,7 +181,7 @@ export async function renderHistory() {
           </div>`;
         dg.appendChild(div);
       });
-      grpSec.appendChild(dg);
+      grpBody.appendChild(dg);
     });
     el.appendChild(grpSec);
   }
@@ -152,13 +192,10 @@ export async function renderHistory() {
   });
 
   if (pastFolders.length) {
-    const klsSec = document.createElement('div');
-    const klsSectionHdr = document.createElement('div'); klsSectionHdr.className = 'hist-section-header';
-    klsSectionHdr.innerHTML = `
+    const { section: klsSec, body: klsBody } = makeHistSection(`
       <div class="hist-section-icon">${svgIconFolder('var(--muted)')}</div>
       <div class="hist-section-title">${uiStore.currentLang === 'en' ? 'Delivery Management Groups' : 'Teslimat Yönetimi Grupları'}</div>
-      <div class="hist-section-count">${pastFolders.length}</div>`;
-    klsSec.appendChild(klsSectionHdr);
+      <div class="hist-section-count">${pastFolders.length}</div>`);
 
     pastFolders.forEach(folder => {
       const allMembers = folder.ids.map(id => deliveryStore.deliveries.find(c => c.id === id)).filter(Boolean);
@@ -185,19 +222,16 @@ export async function renderHistory() {
               </div>`).join('')}
           </div>
         </div>`;
-      klsSec.appendChild(folderDiv);
+      klsBody.appendChild(folderDiv);
     });
     el.appendChild(klsSec);
   }
 
   if (chaItems.length) {
-    const chaSec = document.createElement('div');
-    const chaHdr = document.createElement('div'); chaHdr.className = 'hist-section-header';
-    chaHdr.innerHTML = `
+    const { section: chaSec, body: chaBody } = makeHistSection(`
       <div class="hist-section-icon">${ICON_BOLT}</div>
       <div class="hist-section-title">${t('charge_history')}</div>
-      <div class="hist-section-count">${chaItems.length}</div>`;
-    chaSec.appendChild(chaHdr);
+      <div class="hist-section-count">${chaItems.length}</div>`);
 
     const byDateC = {};
     chaItems.forEach(h => { const d = (h.startedAt || '').split(' ')[0] || '—'; if (!byDateC[d]) byDateC[d] = []; byDateC[d].push(h); });
@@ -227,7 +261,7 @@ export async function renderHistory() {
           </div>`;
         dg.appendChild(div);
       });
-      chaSec.appendChild(dg);
+      chaBody.appendChild(dg);
     });
     el.appendChild(chaSec);
   }
