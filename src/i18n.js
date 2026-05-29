@@ -1,0 +1,221 @@
+import { uiStore } from './state.js';
+
+export const I18N = {
+  tr: {
+    dlg_ok: 'Tamam', dlg_cancel: 'İptal',
+    nav_sim: 'Hesaplama', nav_delivery: 'Teslimat Yönetimi', nav_history: 'Geçmiş', nav_groups: 'Gruplar', nav_settings: 'Ayarlar',
+    side_total: 'Toplam Paket', side_palets: 'Palet Sayısı',
+    kpi_pkg: 'Toplam Paket', kpi_palets: 'Palet Sayısı', kpi_fill: 'Ort. Doluluk', kpi_avg_ppp: 'Paket/Palet',
+    input_title: 'Girdi Motoru', delivery_label: 'TESLİMAT', title_ph: 'Teslimat başlığı girin...',
+    input_ph: 'Her satıra bir paket kodu girin', lines: 'satır', input_file: 'paket_kodlari.txt',
+    existing_palet: 'Mevcut Palet', existing_palet_ph: '0', existing_palet_hint: 'Sahada zaten bulunan palet sayısı',
+    calculated_palet: 'Hesaplanan', existing_palet_short: 'Mevcut', total_palet: 'Toplam',
+    note_label: 'Not', note_opt: '— isteğe bağlı', note_ph: 'Bu hesaplama için notunuzu yazın...',
+    run_btn: 'Simülasyonu Başlat', run_again: 'Yeniden Hesapla', running: 'Çalışıyor...',
+    warn_no_title: '⚠ Teslimat başlığı giriniz.', warn_no_input: '⚠ Paket kodu girilmedi. Lütfen en az bir satır girin.', warn_no_vol: '⚠ Palet hacmi tanımlanmamış. Ayarlar → Palet İç Hacmi bölümünden boyutları girin.',
+    cat_dist: 'Kategori Dağılımı', pkg_pct: 'Paket Yüzdeleri', palet_result: 'Hesaplanan Palet Miktarı', sys_log: 'Sistem Logu',
+    delivery_sub: 'Hesaplama sonrası otomatik kaydedilir', no_deliveries: 'Henüz teslimat hesabı yapılmadı',
+    grup_sub: 'Teslimatları grupla ve arşivle', new_grup: 'Grup', grup_ph: 'Grup adı',
+    unassigned: 'Atanmamış Teslimatlar', no_deliveries_pool: 'Henüz teslimat yok', all_assigned: 'Tüm teslimatlar klasöre atandı',
+    theme_label: 'Görünüm', theme_light: 'Açık', theme_dark: 'Koyu',
+    io_title: 'Veri Yedekleme & Geri Yükleme',
+    io_local_notice: 'Tüm verileriniz yalnızca bu cihazda ve bu tarayıcıda saklanır; sunucuya gönderilmez. Tarayıcı verileri temizlenirse veya başka bir cihaz/tarayıcı kullanılırsa kayıtlar kaybolur. Düzenli olarak “Tam Yedek” ile dışa aktarın.',
+    limit_warn: 'Kayıt sınırına ulaşıldı; yer açmak için en eski kayıt(lar) otomatik silindi. Veri kaybını önlemek için Ayarlar → Tam Yedek ile dışa aktarın.',
+    export_full_title: 'Tam Yedek', export_full_desc: 'Tüm veriler tek dosyada dışa aktarılır.', export_full_btn: 'Yedek İndir (.json)', export_full_desc_short: 'Tüm veriyi indir',
+    import_full_title: 'Yedek Yükle', import_full_desc: 'Yedeği geri yükler. Mevcut verinin üzerine yazar.', import_full_btn: 'Yedek Yükle (.json)', import_full_desc_short: 'Üzerine yazar',
+    export_profile_title: 'Profil İndir', export_profile_desc: 'Yalnızca paket ve palet konfigürasyonu. Paylaşılabilir.', export_profile_btn: 'Profil İndir (.json)', export_profile_desc_short: 'Paket ve palet ayarları',
+    import_profile_title: 'Profil Yükle', import_profile_desc: 'Profil dosyasını yükler. Paket ve palet ayarlarını günceller.', import_profile_btn: 'Profil Yükle (.json)', import_profile_desc_short: 'Ayarları günceller',
+    data_mgmt: 'Veri Yönetimi', clear_all: 'Tüm verileri sıfırla', clear_del: 'Teslimat verilerini sil', clear_grp: 'Grup verilerini sil',
+    palet_vol_title: 'Palet İç Hacmi', palet_vol_desc: 'Palet/araç iç hacim boyutlarını mm cinsinden girin.',
+    length: 'Uzunluk (mm)', width: 'Genişlik (mm)', height: 'Yükseklik (mm)', calc_vol: 'Hesaplanan hacim', save: 'Kaydet', reset_empty: 'Sıfırla (boş)',
+    pkg_cfg_title: 'Paket Konfigürasyonu', current_pkgs: 'Mevcut Paketler',
+    pkg_cfg_desc: 'Boyutlar (mm), kategori ve palet başına limit düzenlenebilir. Limit 0 veya boş = sınırsız.',
+    col_code: 'Kod', col_l: 'Uzunluk', col_w: 'Genişlik', col_h: 'Yükseklik', col_lim: 'Limit', col_cat: 'Kategori',
+    add_pkg: 'Yeni Paket Ekle', add_pkg_btn: 'Paketi Ekle',
+    cat_small: 'Küçük', cat_mid: 'Orta', cat_big: 'Büyük',
+    clear_all_hist: 'Tümünü sil',
+    edit_name: 'Adı düzenle', add_note: 'Not ekle', archive_grup: 'Arşivle', delete_grup: 'Sil', remove_member: 'Çıkar',
+    save_note: 'Kaydet', note_placeholder: 'Bu grup için not...',
+    palet_label: 'Palet', pkg_label: 'Paket', fill_label: 'Doluluk',
+    archived_on: 'Arşivlendi',
+    no_hist: 'Henüz hesaplama geçmişi yok',
+    unknown_pkg: 'Tanımsız kodlar',
+    log_oversized: 'Paletten büyük paketler (atlandı)',
+    log_no_valid_pkg: 'Hiçbir geçerli paket bulunamadı, simülasyon durduruldu',
+    err_invalid_dim: 'Geçersiz boyut', err_code_required: 'Paket kodu gerekli', err_code_exists: 'zaten mevcut',
+    err_invalid_file: 'Geçersiz dosya', err_invalid_profile: 'Geçersiz profil dosyası',
+    toast_restored: 'Yedek geri yüklendi', toast_exported: 'Yedek indirildi', toast_profile_loaded: 'Profil yüklendi', toast_profile_exported: 'Profil indirildi',
+    folder_ph: 'Klasör adı', new_folder: 'Klasör',
+    members_label: 'Teslimatlar',
+    log_engine_start: 'Girdi motoru başlatıldı', log_unique: 'benzersiz kod',
+    log_vol_analysis: 'Hacim analizi', log_total_vol: 'Toplam hacim', log_palet_cap: 'Palet kapasitesi', log_est_palet: 'Tahmini palet',
+    log_dist: 'Ağırlıklı dağıtım', log_block: 'Blok', log_results: 'Sonuçlar hazırlanıyor',
+    log_charts: 'Grafikler', log_palets: 'Palet kartları', log_done: 'Tamamlandı', log_complete: 'Simülasyon tamamlandı',
+    recent_calcs: 'Son Hesaplamalar (Bugün)', no_recent: 'Bugün henüz hesaplama yapılmadı',
+    old_in_history: 'Eski kayıtlar geçmişte görüntülenir',
+    modal_close: 'Kapat', today_label: 'bugün',
+    font_size: 'Yazı Boyutu',
+    paket_lbl: 'paket', palet_lbl: 'palet',
+    charge_tracking: 'Şarj Takibi', charge_end_label: 'Şarj bitiş saati', charge_now_total: 'Şu anki total paket',
+    avg_pkg_per_palet: 'Ort. paket/palet', auto_from_sim: '(simülasyondan otomatik)',
+    charge_start_btn: 'Şarj Takibini Başlat',
+    charge_active: 'Şarj Aktif', charge_end_at: 'Bitiş', stop_btn: 'Durdur',
+    instant_forecast: 'ANLIK TAHMİN', remain_time: 'Kalan Süre', rate_label: 'Hız', remain_palet: 'Kalan Palet', avg_label: 'Ortalama',
+    trend_analysis: 'Trend Analizi', trend_sub: 'veri · şarj sonu projeksiyonu',
+    last_data_inc: 'son veri ↑', last_data_dec: 'son veri ↓', last_data_flat: 'değişim yok →',
+    first_data_only: 'ilk veri · tahmin için 2. veri gerekli', first_forecast: 'ilk tahmin oluştu',
+    kpi_pkg_lbl: 'Paket', kpi_total_with_sent: 'Toplam (gönderilenle)', kpi_total_sent: 'Gönderilen',
+    cur_status: 'ŞU ANKİ DURUM',
+    cs_existing: 'Mevcut palet (başlangıç)', cs_simulated: 'Hesaplanan palet (simülasyon)',
+    cs_arrived: 'Şarjla gelmiş (şu ana kadar)', cs_remaining: 'Şarjla gelecek (tahmini kalan)',
+    cs_final: 'Şarj sonu toplam (tahmini)',
+    cs_avg_ppp: 'Ortalama paket/palet',
+    paket_flow: 'Paket Akışı', paket_last: 'paket · son',
+    forecast_hist: 'Tahmin Geçmişi', min_2_data: 'En az 2 veri gerekli. Yeni veri girince tahmin oluşur.',
+    new_data_entry: 'Yeni Veri Gir', data_total: 'Total paket', data_sent: 'Gönderildi (opsiyonel)', data_add_btn: 'Veri Ekle',
+    valid_total_required: 'Lütfen geçerli bir total paket sayısı girin.',
+    charge_history: 'Şarj Geçmişi', no_charge_history: 'Henüz tamamlanmış şarj kaydı yok',
+    download_csv: 'CSV İndir', first_data_label: 'ilk veri',
+    calib_history: 'Kalibrasyon Geçmişi',
+    calib_src_sim: 'simülasyon', calib_src_manual: 'kalibrasyon',
+    pkg_per_palet_short: 'pkt/plt',
+    no_calib: 'Henüz kalibrasyon kaydı yok',
+    recalib_btn: 'Ortalamayı Yenile',
+    cur_avg: 'Mevcut ortalama',
+    recalib_hint: 'Şarj başladığından beri gelen paketleri alt alta girin. Ortalama simülasyon algoritmasıyla hesaplanır. Mevcut palet sayısı kayıt için girilir.',
+    recalib_pkg_label: 'Gelen paketler (alt alta)',
+    recalib_palet_label: 'Mevcut toplam palet (kayıt)',
+    recalib_apply: 'Hesapla ve Uygula',
+    recalib_no_pkg: 'Lütfen paket girişi yapın.',
+    recalib_no_palet: 'Lütfen geçerli bir palet sayısı girin.',
+    recalib_failed: 'Kalibrasyon başarısız. Paket kodlarını kontrol edin.'
+  },
+  en: {
+    dlg_ok: 'OK', dlg_cancel: 'Cancel',
+    nav_sim: 'Simulation', nav_delivery: 'Delivery Manager', nav_history: 'History', nav_groups: 'Groups', nav_settings: 'Settings',
+    side_total: 'Total Packages', side_palets: 'Pallet Count',
+    kpi_pkg: 'Total Packages', kpi_palets: 'Pallet Count', kpi_fill: 'Avg. Fill Rate', kpi_avg_ppp: 'Pkg/Pallet',
+    input_title: 'Input Engine', delivery_label: 'DELIVERY', title_ph: 'Enter delivery title...',
+    input_ph: 'Enter one package code per line', lines: 'lines', input_file: 'package_codes.txt',
+    existing_palet: 'Existing Pallets', existing_palet_ph: '0', existing_palet_hint: 'Pallets already on site',
+    calculated_palet: 'Calculated', existing_palet_short: 'Existing', total_palet: 'Total',
+    note_label: 'Note', note_opt: '— optional', note_ph: 'Add a note for this calculation...',
+    run_btn: 'Run Simulation', run_again: 'Run Again', running: 'Running...',
+    warn_no_title: '⚠ Please enter a delivery title.', warn_no_input: '⚠ No package codes entered. Please enter at least one line.', warn_no_vol: '⚠ Pallet volume not set. Go to Settings → Pallet Volume.',
+    cat_dist: 'Category Distribution', pkg_pct: 'Package Percentages', palet_result: 'Calculated Pallet Count', sys_log: 'System Log',
+    delivery_sub: 'Auto-saved after each calculation', no_deliveries: 'No deliveries calculated yet',
+    grup_sub: 'Group and archive deliveries', new_grup: 'Group', grup_ph: 'Group name',
+    unassigned: 'Unassigned Deliveries', no_deliveries_pool: 'No deliveries yet', all_assigned: 'All deliveries assigned to folders',
+    theme_label: 'Appearance', theme_light: 'Light', theme_dark: 'Dark',
+    io_title: 'Backup & Restore',
+    io_local_notice: 'All your data is stored only on this device and browser; it is never sent to a server. If browser data is cleared or another device/browser is used, records are lost. Export regularly with “Full Backup”.',
+    limit_warn: 'Record limit reached; the oldest record(s) were automatically deleted to make room. Export via Settings → Full Backup to avoid data loss.',
+    export_full_title: 'Full Backup', export_full_desc: 'All data exported to a single file.', export_full_btn: 'Download Backup (.json)', export_full_desc_short: 'Download all data',
+    import_full_title: 'Restore Backup', import_full_desc: 'Restores a backup. Overwrites current data.', import_full_btn: 'Load Backup (.json)', import_full_desc_short: 'Overwrites data',
+    export_profile_title: 'Export Profile', export_profile_desc: 'Package and pallet config only. Shareable.', export_profile_btn: 'Download Profile (.json)', export_profile_desc_short: 'Package & pallet config',
+    import_profile_title: 'Import Profile', import_profile_desc: 'Loads a profile. Updates package and pallet settings.', import_profile_btn: 'Load Profile (.json)', import_profile_desc_short: 'Updates settings',
+    data_mgmt: 'Data Management', clear_all: 'Reset all data', clear_del: 'Delete delivery data', clear_grp: 'Delete group data',
+    palet_vol_title: 'Pallet Volume', palet_vol_desc: 'Enter the internal dimensions of the pallet/vehicle in mm.',
+    length: 'Length (mm)', width: 'Width (mm)', height: 'Height (mm)', calc_vol: 'Calculated volume', save: 'Save', reset_empty: 'Reset (clear)',
+    pkg_cfg_title: 'Package Configuration', current_pkgs: 'Current Packages',
+    pkg_cfg_desc: 'Edit dimensions (mm), category and per-pallet limit. Limit 0 or empty = unlimited.',
+    col_code: 'Code', col_l: 'Length', col_w: 'Width', col_h: 'Height', col_lim: 'Limit', col_cat: 'Category',
+    add_pkg: 'Add New Package', add_pkg_btn: 'Add Package',
+    cat_small: 'Small', cat_mid: 'Medium', cat_big: 'Large',
+    clear_all_hist: 'Clear all',
+    edit_name: 'Rename', add_note: 'Add note', archive_grup: 'Archive', delete_grup: 'Delete', remove_member: 'Remove',
+    save_note: 'Save', note_placeholder: 'Note for this group...',
+    palet_label: 'Pallets', pkg_label: 'Packages', fill_label: 'Fill Rate',
+    archived_on: 'Archived',
+    no_hist: 'No calculation history yet',
+    unknown_pkg: 'Unknown codes',
+    log_oversized: 'Oversized packages (skipped)',
+    log_no_valid_pkg: 'No valid packages found, simulation stopped',
+    err_invalid_dim: 'Invalid dimensions', err_code_required: 'Code required', err_code_exists: 'already exists',
+    err_invalid_file: 'Invalid file', err_invalid_profile: 'Invalid profile file',
+    toast_restored: 'Backup restored', toast_exported: 'Backup downloaded', toast_profile_loaded: 'Profile loaded', toast_profile_exported: 'Profile downloaded',
+    folder_ph: 'Folder name', new_folder: 'Folder',
+    members_label: 'Deliveries',
+    log_engine_start: 'Input engine started', log_unique: 'unique codes',
+    log_vol_analysis: 'Volume analysis', log_total_vol: 'Total volume', log_palet_cap: 'Pallet capacity', log_est_palet: 'Estimated pallets',
+    log_dist: 'Weighted distribution', log_block: 'Block', log_results: 'Rendering results',
+    log_charts: 'Charts', log_palets: 'Pallet cards', log_done: 'Done', log_complete: 'Simulation complete',
+    recent_calcs: "Today's Calculations", no_recent: 'No calculations today yet',
+    old_in_history: 'Older records are in History',
+    modal_close: 'Close', today_label: 'today',
+    font_size: 'Font Size',
+    paket_lbl: 'pkg', palet_lbl: 'plt',
+    charge_tracking: 'Charge Tracking', charge_end_label: 'Charge end time', charge_now_total: 'Current total packages',
+    avg_pkg_per_palet: 'Avg pkg/pallet', auto_from_sim: '(auto from simulation)',
+    charge_start_btn: 'Start Charge Tracking',
+    charge_active: 'Charge Active', charge_end_at: 'Ends', stop_btn: 'Stop',
+    instant_forecast: 'INSTANT FORECAST', remain_time: 'Remaining', rate_label: 'Rate', remain_palet: 'Remaining Pallets', avg_label: 'Average',
+    trend_analysis: 'Trend Analysis', trend_sub: 'data · charge end projection',
+    last_data_inc: 'last data ↑', last_data_dec: 'last data ↓', last_data_flat: 'no change →',
+    first_data_only: 'first data · need 2nd to forecast', first_forecast: 'first forecast formed',
+    kpi_pkg_lbl: 'Packages', kpi_total_with_sent: 'Total (incl. sent)', kpi_total_sent: 'Sent',
+    cur_status: 'CURRENT STATUS',
+    cs_existing: 'Existing pallets (start)', cs_simulated: 'Calculated pallets (simulation)',
+    cs_arrived: 'Arrived via charge (so far)', cs_remaining: 'Charge incoming (forecast)',
+    cs_final: 'Charge end total (forecast)',
+    cs_avg_ppp: 'Average packages per pallet',
+    paket_flow: 'Package Flow', paket_last: 'pkg · latest',
+    forecast_hist: 'Forecast History', min_2_data: 'At least 2 data points required. Add new data to form forecast.',
+    new_data_entry: 'New Data Entry', data_total: 'Total packages', data_sent: 'Sent (optional)', data_add_btn: 'Add Data',
+    valid_total_required: 'Please enter a valid total package count.',
+    charge_history: 'Charge History', no_charge_history: 'No completed charge records yet',
+    download_csv: 'Download CSV', first_data_label: 'first data',
+    calib_history: 'Calibration History',
+    calib_src_sim: 'simulation', calib_src_manual: 'recalibrated',
+    pkg_per_palet_short: 'pkg/plt',
+    no_calib: 'No calibration records yet',
+    recalib_btn: 'Refresh Average',
+    cur_avg: 'Current average',
+    recalib_hint: 'Enter packages received since charge start, one per line. Average is computed by the simulation algorithm. Pallet count is recorded for reference only.',
+    recalib_pkg_label: 'Received packages (one per line)',
+    recalib_palet_label: 'Current total pallets (record)',
+    recalib_apply: 'Calculate & Apply',
+    recalib_no_pkg: 'Please enter packages.',
+    recalib_no_palet: 'Please enter a valid pallet count.',
+    recalib_failed: 'Calibration failed. Check package codes.'
+  }
+};
+
+export function t(key) {
+  return (I18N[uiStore.currentLang] || I18N.tr)[key] || key;
+}
+
+export function setLang(lang) {
+  uiStore.currentLang = lang;
+  localStorage.setItem('ops_lang', lang);
+  const tr = document.getElementById('langTR');
+  const en = document.getElementById('langEN');
+  if (tr) tr.classList.toggle('active', lang === 'tr');
+  if (en) en.classList.toggle('active', lang === 'en');
+  applyI18N();
+  // Re-render dynamic sections that contain translated strings
+  if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+  if (typeof window.__renderHistory === 'function') window.__renderHistory();
+}
+
+export function applyI18N() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    const v = t(k);
+    if (v) el.textContent = v;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const k = el.dataset.i18nPh;
+    const v = t(k);
+    if (v) el.placeholder = v;
+  });
+  document.querySelectorAll('[data-i18n-nav]').forEach(el => {
+    const k = el.dataset.i18nNav;
+    const v = t(k);
+    if (v) el.textContent = v;
+  });
+  document.querySelectorAll('.note-opt').forEach(el => { el.textContent = t('note_opt'); });
+  const ief = document.getElementById('inputEngineFile'); if (ief) ief.textContent = t('input_file');
+  const gi = document.getElementById('grupNameInput'); if (gi) gi.placeholder = t('grup_ph');
+  const ci = document.getElementById('deliveryFolderNameInput'); if (ci) ci.placeholder = t('folder_ph');
+}

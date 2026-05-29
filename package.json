@@ -1,0 +1,22 @@
+{
+  "name": "ops-sim",
+  "version": "1.0.0",
+  "description": "OPS · SIM — Paket/palet simülasyon ve teslimat takip aracı",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.0"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "vite": "^5.4.0",
+    "vitest": "^4.1.7"
+  }
+}

@@ -1,0 +1,27 @@
+.shell{display:grid;grid-template-columns:224px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:4px}
+.brand{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:3px;color:var(--accent);padding:0 8px;margin-bottom:12px}
+.nav{padding:8px 10px;border-radius:8px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:.15s;user-select:none}
+.nav.on{background:rgba(91,127,255,.12);color:var(--accent);border:1px solid rgba(91,127,255,.25)}
+.nav:hover:not(.on){background:rgba(128,128,128,.08);color:var(--text)}
+.divider{height:1px;background:var(--border);margin:6px 0}
+
+.sidebar-bottom{margin-top:auto;display:flex;flex-direction:column;gap:10px;padding-top:10px}
+.lang-toggle{display:flex;gap:4px;padding:0 2px}
+.lang-btn{flex:1;padding:5px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-family:var(--mono);font-size:10px;font-weight:700;cursor:pointer;transition:.15s;text-align:center}
+.lang-btn.active{border-color:rgba(91,127,255,.5);background:rgba(91,127,255,.12);color:var(--accent)}
+.side-stat{display:flex;flex-direction:column;gap:8px;padding:10px 10px 6px;border-top:1px solid var(--border)}
+.side-row{display:flex;flex-direction:column;gap:2px}
+.side-label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.side-val{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--text);line-height:1.2}
+.side-val.accent{color:var(--accent)}
+.side-val.green{color:#60a5fa}
+[data-theme="light"] .side-val.green{color:#0c447c}
+.side-breakdown{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.side-breakdown b{color:var(--text);font-weight:700}
+
+.tab-view{display:none;flex-direction:column;gap:14px}
+.tab-view.active{display:flex}
+.main{padding:20px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+.row3{display:grid;grid-template-columns:1.2fr minmax(0,1fr) minmax(0,1fr);gap:12px}
+.row3b{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:12px}

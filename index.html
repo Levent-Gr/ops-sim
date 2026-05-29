@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>OPS · SIM</title>
+<link rel="icon" type="image/svg+xml" href="./favicon.svg"/>
+<link rel="stylesheet" href="./src/styles/main.css"/>
+</head>
+<body>
+
+<div class="shell">
+<div class="sidebar">
+  <div class="brand">OPS · SIM</div>
+  <div class="nav on" data-tab="sim" data-i18n-nav="nav_sim">Hesaplama</div>
+  <div class="nav" data-tab="delivery" data-i18n-nav="nav_delivery">Teslimat Yönetimi</div>
+  <div class="nav" data-tab="gecmis" data-i18n-nav="nav_history">Geçmiş</div>
+  <div class="nav" data-tab="grup" data-i18n-nav="nav_groups">Gruplar</div>
+  <div class="divider"></div>
+  <div class="nav" data-tab="ayarlar" data-i18n-nav="nav_settings">Ayarlar</div>
+  <div class="sidebar-bottom">
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="langTR">TR</button>
+      <button class="lang-btn" id="langEN">EN</button>
+    </div>
+    <div class="side-stat">
+      <div class="side-row">
+        <div class="side-label" data-i18n="side_total">Toplam Paket</div>
+        <div class="side-val accent" id="sideTotal">—</div>
+      </div>
+      <div class="side-row">
+        <div class="side-label" data-i18n="side_palets">Palet Sayısı</div>
+        <div class="side-val green" id="sidePalet">—</div>
+        <div class="side-breakdown" id="sideBreakdown" style="display:none">
+          <span data-i18n="calculated_palet">Hesap.</span>: <b id="sideCalcPalet">0</b> · <span data-i18n="existing_palet_short">Mevcut</span>: <b id="sideExistPalet">0</b>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- SİMÜLASYON -->
+  <div class="tab-view active" id="tab-sim">
+    <div style="padding:0 2px">
+      <div class="global-prog-wrap" id="globalWrap"><div class="global-prog-fill" id="globalFill"></div></div>
+      <div class="phase-label" id="phaseLabel"></div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kl" data-i18n="kpi_pkg">Toplam Paket</div><div class="kv accent" id="kpiPkg">0</div></div>
+      <div class="kpi">
+        <div class="kl" data-i18n="kpi_palets">Palet Sayısı</div>
+        <div class="kv green" id="kpiPalet">0</div>
+        <div class="kpi-breakdown" id="kpiPaletBreakdown" style="display:none">
+          <span><span data-i18n="calculated_palet">Hesaplanan</span>: <b id="kpiCalcPalet">0</b></span>
+          <span class="bdot">·</span>
+          <span><span data-i18n="existing_palet_short">Mevcut</span>: <b id="kpiExistPalet">0</b></span>
+        </div>
+      </div>
+      <div class="kpi"><div class="kl" data-i18n="kpi_avg_ppp">Paket/Palet</div><div class="kv" id="kpiAvg">—</div></div>
+    </div>
+    <div class="row3">
+      <div class="card" id="inputCard">
+        <div class="clabel" data-i18n="input_title">Girdi Motoru</div>
+        <div class="title-row" id="titleRow">
+          <span class="title-label" data-i18n="delivery_label">Teslimat</span>
+          <input class="title-input" id="titleInput" data-i18n-ph="title_ph" placeholder="Teslimat başlığı girin..." maxlength="40" autocomplete="off"/>
+        </div>
+        <div class="existing-palet-row" id="existingPaletRow">
+          <span class="ep-label" data-i18n="existing_palet">Mevcut Palet</span>
+          <input class="ep-input" id="existingPaletInput" type="number" min="0" value="0" data-i18n-ph="existing_palet_ph" placeholder="0"/>
+          <span class="ep-hint" data-i18n="existing_palet_hint">Sahada zaten bulunan palet sayısı</span>
+        </div>
+        <div class="input-engine">
+          <div class="input-engine-header">
+            <div class="input-engine-dot" style="background:#34d399"></div>
+            <div class="input-engine-dot" style="background:var(--amber);margin-left:4px"></div>
+            <div class="input-engine-dot" style="background:var(--red);margin-left:4px"></div>
+            <span class="input-engine-title" style="margin-left:8px" id="inputEngineFile">paket_kodlari.txt</span>
+            <span class="input-engine-count" id="lineCount">0 <span data-i18n="lines">satır</span></span>
+          </div>
+          <textarea id="input" data-i18n-ph="input_ph" placeholder="Her satıra bir paket kodu girin"></textarea>
+        </div>
+        <div class="inline-warn" id="inputWarn"></div>
+        <div class="note-area">
+          <div class="note-label" data-i18n="note_label">Not <span class="note-opt" data-i18n="note_opt">— isteğe bağlı</span></div>
+          <textarea id="noteInput" data-i18n-ph="note_ph" placeholder="Bu hesaplama için notunuzu yazın..."></textarea>
+        </div>
+        <div class="btn-row">
+          <button class="run" id="runBtn">
+            <div class="spinner" id="spinner"></div>
+            <span id="runLabel" data-i18n="run_btn">Hesaplamayı Başlat</span>
+          </button>
+        </div>
+      </div>
+      <div class="card" id="donutCard">
+        <div class="clabel" data-i18n="cat_dist">Kategori Dağılımı</div>
+        <div class="donut-wrap">
+          <svg class="donut-svg" id="donutSvg" viewBox="0 0 180 180"></svg>
+          <div class="legend" id="donutLegend"></div>
+        </div>
+      </div>
+      <div class="card" id="barCard">
+        <div class="clabel" data-i18n="pkg_pct">Paket Yüzdeleri</div>
+        <div class="bars" id="barChart"></div>
+      </div>
+    </div>
+    <div class="row3b">
+      <div class="card" id="paletCard">
+        <div class="clabel" data-i18n="palet_result">Hesaplanan Palet Miktarı</div>
+        <div class="s-scroll" id="paletList"></div>
+        <div class="detail" id="detail">
+          <div class="d-title" id="detailTitle"></div>
+          <div class="tag-wrap" id="detailTags"></div>
+        </div>
+      </div>
+      <div class="card" style="grid-column:span 2" id="logCard">
+        <div class="clabel" data-i18n="sys_log">Sistem Logu</div>
+        <div class="log-scroll" id="logList"></div>
+      </div>
+    </div>
+    <div class="card" id="recentCard">
+      <div class="clabel" data-i18n="recent_calcs">Son Hesaplamalar (Bugün)</div>
+      <div class="recent-list" id="recentList">
+        <div style="font-size:12px;color:var(--muted);font-style:italic" data-i18n="no_recent">Bugün henüz hesaplama yapılmadı</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TESLİMAT YÖNETİMİ -->
+  <div class="tab-view" id="tab-delivery">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="clabel" style="margin-bottom:0" data-i18n="nav_delivery">Teslimat Yönetimi</div>
+        <span style="font-size:11px;color:var(--muted)" data-i18n="delivery_sub">Hesaplama sonrası otomatik kaydedilir</span>
+      </div>
+      <div class="new-grup-row">
+        <input id="deliveryFolderNameInput" class="grup-name-inp-main" placeholder="Klasör adı" maxlength="40"/>
+        <button class="btn-create-grup" id="btnCreateDeliveryFolder">+ <span data-i18n="new_folder">Klasör</span></button>
+      </div>
+      <div class="pool-section">
+        <div class="clabel" data-i18n="unassigned">Atanmamış Teslimatlar</div>
+        <div class="pool-vertical" id="deliveryPool">
+          <span class="pool-empty" data-i18n="no_deliveries">Henüz teslimat hesabı yapılmadı</span>
+        </div>
+      </div>
+      <div id="deliveryFolderArea"></div>
+    </div>
+  </div>
+
+  <!-- GRUPLAR -->
+  <div class="tab-view" id="tab-grup">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="clabel" style="margin-bottom:0" data-i18n="nav_groups">Gruplar</div>
+        <span style="font-size:11px;color:var(--muted)" data-i18n="grup_sub">Teslimatları grupla ve arşivle</span>
+      </div>
+      <div class="new-grup-row">
+        <input id="grupNameInput" class="grup-name-inp-main" placeholder="Grup adı" maxlength="40"/>
+        <button class="btn-create-grup" id="btnCreateGrup">+ <span data-i18n="new_grup">Grup</span></button>
+      </div>
+      <div class="pool-section">
+        <div class="clabel" data-i18n="unassigned">Atanmamış Teslimatlar</div>
+        <div class="pool-vertical" id="grupPool">
+          <span class="pool-empty" data-i18n="no_deliveries_pool">Henüz teslimat yok</span>
+        </div>
+      </div>
+      <div id="grupArea"></div>
+    </div>
+  </div>
+
+  <!-- AYARLAR -->
+  <div class="tab-view" id="tab-ayarlar">
+    <div class="card">
+      <div class="clabel" data-i18n="theme_label">Görünüm</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="themeOptions">
+        <button class="theme-btn" data-theme="light">☀️ <span data-i18n="theme_light">Açık</span></button>
+        <button class="theme-btn" data-theme="dark">🌑 <span data-i18n="theme_dark">Koyu</span></button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="clabel" data-i18n="io_title">Veri Yedekleme &amp; Geri Yükleme</div>
+      <div class="io-local-notice">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="4.5" r="0.6"/></svg>
+        <span data-i18n="io_local_notice">Tüm verileriniz yalnızca bu cihazda ve bu tarayıcıda saklanır; sunucuya gönderilmez. Tarayıcı verileri temizlenirse veya başka bir cihaz/tarayıcı kullanılırsa kayıtlar kaybolur. Düzenli olarak “Tam Yedek” ile dışa aktarın.</span>
+      </div>
+      <div class="io-wrapper">
+        <div class="io-grid">
+          <div class="io-card export-full" id="btnExportFull">
+            <div class="io-card-icon">
+              <svg viewBox="0 0 16 16"><path d="M8 2v9"/><path d="M5 7l3 4 3-4"/><path d="M2 13h12"/></svg>
+            </div>
+            <div class="io-card-text">
+              <div class="io-card-title" data-i18n="export_full_title">Tam Yedek</div>
+              <div class="io-card-desc" data-i18n="export_full_desc_short">Tüm veriyi indir</div>
+            </div>
+            <div class="io-card-arrow">→</div>
+          </div>
+          <div class="io-card import-full" id="btnImportFullTrigger">
+            <div class="io-card-icon">
+              <svg viewBox="0 0 16 16"><path d="M8 11V2"/><path d="M5 6l3-4 3 4"/><path d="M2 13h12"/></svg>
+            </div>
+            <div class="io-card-text">
+              <div class="io-card-title" data-i18n="import_full_title">Yedek Yükle</div>
+              <div class="io-card-desc" data-i18n="import_full_desc_short">Üzerine yazar</div>
+            </div>
+            <div class="io-card-arrow">→</div>
+            <input type="file" id="fileInputFull" accept=".json"/>
+          </div>
+          <div class="io-card export-prof" id="btnExportProfile">
+            <div class="io-card-icon">
+              <svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M5 6h6"/><path d="M5 9h4"/></svg>
+            </div>
+            <div class="io-card-text">
+              <div class="io-card-title" data-i18n="export_profile_title">Profil İndir</div>
+              <div class="io-card-desc" data-i18n="export_profile_desc_short">Paket ve palet ayarları</div>
+            </div>
+            <div class="io-card-arrow">→</div>
+          </div>
+          <div class="io-card import-prof" id="btnImportProfileTrigger">
+            <div class="io-card-icon">
+              <svg viewBox="0 0 16 16"><path d="M8 11V2"/><path d="M5 6l3-4 3 4"/><rect x="2" y="11" width="12" height="3" rx="1"/></svg>
+            </div>
+            <div class="io-card-text">
+              <div class="io-card-title" data-i18n="import_profile_title">Profil Yükle</div>
+              <div class="io-card-desc" data-i18n="import_profile_desc_short">Ayarları günceller</div>
+            </div>
+            <div class="io-card-arrow">→</div>
+            <input type="file" id="fileInputProfile" accept=".json"/>
+          </div>
+        </div>
+        <div class="io-delete-col">
+          <button class="btn-data-del" id="btnClearAll">
+            <svg viewBox="0 0 16 16"><polyline points="3,4 13,4"/><path d="M5,4V3h6v1"/><path d="M4,4l1,9h6l1-9"/><line x1="7" y1="7" x2="7" y2="11"/><line x1="9" y1="7" x2="9" y2="11"/></svg>
+            <span data-i18n="clear_all">Tüm verileri sıfırla</span>
+          </button>
+          <button class="btn-data-del" id="btnClearDeliveries">
+            <svg viewBox="0 0 16 16"><rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M5,4V3h6v1"/><line x1="6" y1="7.5" x2="10" y2="10.5"/><line x1="10" y1="7.5" x2="6" y2="10.5"/></svg>
+            <span data-i18n="clear_del">Teslimat verilerini sil</span>
+          </button>
+          <button class="btn-data-del" id="btnClearGroups">
+            <svg viewBox="0 0 16 16"><path d="M2,5h4l1.5,2H14v6H2z"/><line x1="9" y1="8.5" x2="12" y2="11.5"/><line x1="12" y1="8.5" x2="9" y2="11.5"/></svg>
+            <span data-i18n="clear_grp">Grup verilerini sil</span>
+          </button>
+        </div>
+      </div>
+      <div class="cfg-toast" id="ioToast" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <div class="clabel" data-i18n="palet_vol_title">Palet İç Hacmi</div>
+      <div class="cfg-section">
+        <div class="palet-vol-card">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:14px" data-i18n="palet_vol_desc">Palet/araç iç hacim boyutlarını mm cinsinden girin. Değişiklik sonraki simülasyondan itibaren geçerlidir.</div>
+          <div class="palet-vol-dims">
+            <div class="dim-field"><div class="dim-label" data-i18n="length">Uzunluk (mm)</div><input class="dim-input" id="svLen" type="number" min="1" placeholder="örn. 2400"/></div>
+            <div class="dim-field"><div class="dim-label" data-i18n="width">Genişlik (mm)</div><input class="dim-input" id="svWid" type="number" min="1" placeholder="örn. 1600"/></div>
+            <div class="dim-field"><div class="dim-label" data-i18n="height">Yükseklik (mm)</div><input class="dim-input" id="svHgt" type="number" min="1" placeholder="örn. 2000"/></div>
+          </div>
+          <div class="palet-vol-result">
+            <div class="svr-label" data-i18n="calc_vol">Hesaplanan hacim</div>
+            <div class="svr-val" id="svResult">—</div>
+          </div>
+          <div class="palet-vol-actions">
+            <button class="btn-cfg-save" id="btnSavePaletVol" data-i18n="save">Kaydet</button>
+            <button class="btn-cfg-reset" id="btnResetPaletVol" data-i18n="reset_empty">Sıfırla (boş)</button>
+          </div>
+          <div class="cfg-toast" id="svToast"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="clabel" data-i18n="pkg_cfg_title">Paket Konfigürasyonu</div>
+      <div class="cfg-section">
+        <div class="cfg-section-title" data-i18n="current_pkgs">Mevcut Paketler</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px" data-i18n="pkg_cfg_desc">Boyutlar (mm), kategori ve palet başına limit düzenlenebilir. Limit 0 veya boş = sınırsız.</div>
+        <div class="pkg-cfg-header-row">
+          <div class="pkg-col-label" data-i18n="col_code">Kod</div>
+          <div class="pkg-col-label"></div>
+          <div class="pkg-col-label" data-i18n="col_l">Uzunluk</div>
+          <div class="pkg-col-label" data-i18n="col_w">Genişlik</div>
+          <div class="pkg-col-label" data-i18n="col_h">Yükseklik</div>
+          <div class="pkg-col-label accent" data-i18n="col_lim">Limit</div>
+          <div class="pkg-col-label" data-i18n="col_cat">Kategori</div>
+          <div></div>
+        </div>
+        <div class="pkg-cfg-list" id="pkgCfgList"></div>
+        <div class="cfg-toast" id="pkgEditToast"></div>
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-section-title" data-i18n="add_pkg">Yeni Paket Ekle</div>
+        <div class="add-pkg-form">
+          <div class="add-pkg-grid">
+            <div class="add-pkg-field">
+              <div class="add-pkg-label" data-i18n="col_code">Kod</div>
+              <input class="add-pkg-inp" id="newPkgCode" placeholder="BOX_S" maxlength="10" style="text-transform:uppercase"/>
+            </div>
+            <div class="add-pkg-field">
+              <div class="add-pkg-label" data-i18n="col_l">Uzunluk (mm)</div>
+              <input class="add-pkg-inp" id="newPkgL" type="number" min="1" placeholder="300"/>
+            </div>
+            <div class="add-pkg-field">
+              <div class="add-pkg-label" data-i18n="col_w">Genişlik (mm)</div>
+              <input class="add-pkg-inp" id="newPkgW" type="number" min="1" placeholder="200"/>
+            </div>
+            <div class="add-pkg-field">
+              <div class="add-pkg-label" data-i18n="col_h">Yükseklik (mm)</div>
+              <input class="add-pkg-inp" id="newPkgH" type="number" min="1" placeholder="150"/>
+            </div>
+            <div class="add-pkg-field">
+              <div class="add-pkg-label accent" data-i18n="col_lim">Limit</div>
+              <input class="add-pkg-lim" id="newPkgLim" type="number" min="0" />
+            </div>
+            <div class="add-pkg-field">
+              <div class="add-pkg-label" data-i18n="col_cat">Kategori</div>
+              <select class="add-pkg-sel" id="newPkgCat">
+                <option value="small" data-i18n="cat_small">Küçük</option>
+                <option value="mid" data-i18n="cat_mid">Orta</option>
+                <option value="big" data-i18n="cat_big">Büyük</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-add-pkg" id="btnAddPkg">+ <span data-i18n="add_pkg_btn">Paketi Ekle</span></button>
+          <div class="cfg-toast" id="addPkgToast"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GEÇMİŞ -->
+  <div class="tab-view" id="tab-gecmis">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="clabel" style="margin-bottom:0" data-i18n="nav_history">Geçmiş</div>
+        <button id="btnClearHist" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:5px" data-i18n="clear_all_hist">Tümünü sil</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ŞARJ ALERT OVERLAY -->
+<div class="charge-alert-overlay" id="chargeAlertOverlay">
+  <div class="charge-alert-box">
+    <div class="charge-alert-header">
+      <div class="charge-alert-icon">
+        <svg viewBox="0 0 24 24"><path d="M13 2L4.5 13H12L11 22L19.5 11H12L13 2Z"/></svg>
+      </div>
+      <div>
+        <div class="charge-alert-title" id="chargeAlertTitle">Şarj Güncellemesi</div>
+        <div class="charge-alert-sub" id="chargeAlertSub">Lütfen aşağıdaki teslimatlar için güncel total paket sayısını girin</div>
+      </div>
+    </div>
+    <div class="charge-alert-items" id="chargeAlertItems"></div>
+    <div class="charge-alert-footer">
+      <button class="charge-alert-dismiss" id="chargeAlertDismiss">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- TESLIMAT DETAY MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">—</div>
+      <div class="modal-date" id="modalDate"></div>
+      <button class="modal-close" id="modalClose" aria-label="Kapat" title="Kapat">✕</button>
+    </div>
+    <div class="modal-kpi-row">
+      <div class="kpi"><div class="kl" id="modalLblPkg">Toplam Paket</div><div class="kv accent" id="modalPkg">0</div></div>
+      <div class="kpi">
+        <div class="kl" id="modalLblPalet">Palet Sayısı</div>
+        <div class="kv green" id="modalPalet">0</div>
+        <div class="kpi-breakdown" id="modalPaletBreakdown" style="display:none">
+          <span><span id="modalLblCalcPalet">Hesaplanan</span>: <b id="modalCalcPalet">0</b></span>
+          <span class="bdot">·</span>
+          <span><span id="modalLblExistPalet">Mevcut</span>: <b id="modalExistPalet">0</b></span>
+        </div>
+      </div>
+      <div class="kpi"><div class="kl" id="modalLblFill">Paket/Palet</div><div class="kv" id="modalFill">—</div></div>
+    </div>
+    <div class="modal-row2">
+      <div class="card" style="padding:14px">
+        <div class="modal-section-label" id="modalLblCatDist">Kategori Dağılımı</div>
+        <div class="donut-wrap">
+          <svg class="donut-svg" id="modalDonut" viewBox="0 0 180 180"></svg>
+          <div class="legend" id="modalLegend"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div class="modal-section-label" id="modalLblPkgPct">Paket Yüzdeleri</div>
+        <div class="bars" id="modalBars"></div>
+      </div>
+    </div>
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <div class="modal-section-label" id="modalLblPaletResult">Hesaplanan Palet Miktarı</div>
+      <div class="modal-palet-scroll" id="modalPaletList"></div>
+    </div>
+    <div id="modalNoteBlock" style="display:none">
+      <div style="background:var(--surface2);border-left:2px solid rgba(91,127,255,.4);border-radius:0 8px 8px 0;padding:10px 12px">
+        <div style="font-size:10px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px" id="modalLblNote">Not</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.6" id="modalNote"></div>
+      </div>
+    </div>
+    <div id="modalChargeSection" style="display:none;margin-top:12px"></div>
+  </div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

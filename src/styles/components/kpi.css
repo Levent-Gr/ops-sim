@@ -1,0 +1,10 @@
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{background:var(--surface2);border-radius:10px;padding:12px 14px}
+.kl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.kv{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text)}
+.kv.accent{color:var(--accent)}
+.kv.green{color:#60a5fa}
+[data-theme="light"] .kv.green{color:#0c447c}
+.kpi-breakdown{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:10px;color:var(--muted);font-family:var(--mono)}
+.kpi-breakdown b{color:var(--text);font-weight:700}
+.kpi-breakdown .bdot{color:var(--border2)}

@@ -1,0 +1,7 @@
+.recent-list{display:flex;flex-direction:column;gap:6px}
+.recent-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:.15s}
+.recent-item:hover{border-color:rgba(91,127,255,.3);background:rgba(91,127,255,.04)}
+.recent-badge{background:rgba(91,127,255,.15);color:var(--accent);border:1px solid rgba(91,127,255,.3);border-radius:5px;padding:2px 6px;font-family:var(--mono);font-size:9px;font-weight:700;flex-shrink:0}
+.recent-name{flex:1;font-size:12px;font-weight:600;color:var(--text)}
+.recent-time{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.recent-palets{font-family:var(--mono);font-size:11px;color:var(--green);font-weight:700}

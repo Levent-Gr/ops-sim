@@ -1,0 +1,52 @@
+.grup-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;margin-bottom:8px}
+.grup-card-header{display:flex;align-items:center;gap:10px;padding:12px 14px}
+.grup-icon{width:32px;height:32px;border-radius:8px;background:rgba(91,127,255,.12);border:1px solid rgba(91,127,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.grup-icon svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.grup-title-block{flex:1;min-width:0}
+.grup-name-display{font-size:13px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px}
+.grup-name-display:hover .grup-edit-hint{opacity:.6}
+.grup-edit-hint{font-size:10px;color:var(--muted);opacity:0;transition:.15s}
+.grup-name-edit{display:none;background:var(--surface3);border:1px solid rgba(91,127,255,.4);border-radius:6px;padding:4px 8px;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--text);outline:none;width:100%}
+.grup-note-text{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grup-count{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:2px 8px;white-space:nowrap}
+.grup-actions{display:flex;gap:4px;margin-left:4px}
+.grup-action-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;padding:4px 6px;border-radius:5px;transition:.15s;white-space:nowrap}
+.grup-action-btn:hover{background:rgba(91,127,255,.1);color:var(--accent)}
+.grup-action-btn.danger:hover{background:rgba(248,113,113,.1);color:var(--red)}
+.grup-action-btn.archive{border:1px solid rgba(52,211,153,.25)}
+.grup-action-btn.archive:hover{background:rgba(52,211,153,.1);color:var(--green);border-color:rgba(52,211,153,.5)}
+.grup-body{border-top:1px solid var(--border)}
+.grup-drop-zone{min-height:60px;display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;transition:background .2s}
+.grup-drop-zone.drag-over{background:rgba(91,127,255,.06);outline:2px dashed rgba(91,127,255,.35);outline-offset:-4px}
+.grup-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:7px;background:rgba(91,127,255,.1);border:1px solid rgba(91,127,255,.22);font-family:var(--mono);font-size:11px;color:var(--accent);cursor:grab;user-select:none;transition:.15s}
+.grup-chip:hover{border-color:rgba(91,127,255,.5)}
+.grup-chip.dragging{opacity:.35}
+.grup-chip-remove{background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;padding:0;line-height:1;transition:.15s}
+.grup-chip-remove:hover{color:var(--red)}
+.grup-note-edit-row{padding:8px 14px 12px;display:none}
+.grup-note-edit-row.open{display:flex;gap:8px}
+.grup-note-inp{flex:1;background:var(--surface3);border:1px solid var(--border2);border-radius:7px;padding:6px 10px;font-family:var(--sans);font-size:12px;color:var(--text);outline:none;transition:border .2s}
+.grup-note-inp:focus{border-color:rgba(91,127,255,.35)}
+.grup-note-inp::placeholder{color:var(--muted)}
+.btn-save-note{padding:6px 12px;border-radius:7px;border:1px solid rgba(52,211,153,.3);background:rgba(52,211,153,.08);color:var(--green);font-size:11px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-save-note:hover{background:rgba(52,211,153,.15)}
+.grup-stats{display:flex;gap:16px;padding:8px 14px;border-top:1px solid var(--border);background:var(--surface3)}
+.grup-stat{font-size:11px;color:var(--muted)}
+.grup-stat span{font-family:var(--mono);color:var(--green);font-weight:600}
+
+.new-grup-row{display:flex;gap:8px;margin-bottom:14px}
+.grup-name-inp-main{flex:1;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none;transition:border .2s}
+.grup-name-inp-main:focus{border-color:rgba(91,127,255,.35)}
+.grup-name-inp-main::placeholder{color:var(--muted)}
+.btn-create-grup{padding:8px 16px;border-radius:8px;border:1px solid rgba(91,127,255,.35);background:rgba(91,127,255,.1);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.2s}
+.btn-create-grup:hover{background:rgba(91,127,255,.2)}
+
+.grup-chip-v{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:rgba(91,127,255,.08);border:1px solid rgba(91,127,255,.2);cursor:grab;user-select:none;transition:.15s}
+.grup-chip-v:hover{border-color:rgba(91,127,255,.4)}
+.grup-chip-v.dragging{opacity:.35}
+.grup-chip-v-name{font-size:13px;font-weight:600;color:var(--accent);flex:1}
+.grup-chip-v-meta{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.grup-chip-v-date{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.grup-chip-v-stats{font-family:var(--mono);font-size:10px;color:var(--green)}
+.grup-chip-v-remove{background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:2px 4px;border-radius:4px;transition:.15s;flex-shrink:0}
+.grup-chip-v-remove:hover{color:var(--red)}

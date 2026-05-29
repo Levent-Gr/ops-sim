@@ -1,0 +1,17 @@
+@import './base.css';
+@import './layout.css';
+@import './components/card.css';
+@import './components/input.css';
+@import './components/progress.css';
+@import './components/kpi.css';
+@import './components/donut.css';
+@import './components/bars.css';
+@import './components/palet.css';
+@import './components/delivery.css';
+@import './components/charge.css';
+@import './components/grup.css';
+@import './components/history.css';
+@import './components/settings.css';
+@import './components/recent.css';
+@import './components/modal.css';
+@import './components/dialog.css';

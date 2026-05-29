@@ -1,0 +1,6 @@
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;transition:border-color .3s}
+.clabel{font-size:10px;font-weight:600;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
+
+@keyframes scanPulse{0%,100%{border-color:var(--border)}50%{border-color:rgba(91,127,255,.3)}}
+.card.scanning{animation:scanPulse 1.2s ease-in-out infinite}
+@keyframes dashIn{from{stroke-dashoffset:var(--dash-len)}to{stroke-dashoffset:0}}

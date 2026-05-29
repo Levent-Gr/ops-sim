@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#f0f2f7;--surface:#ffffff;--surface2:#e8ecf4;--surface3:#dde2ef;
+  --border:#d0d5e8;--border2:#c0c8de;--text:#1a1d2e;--muted:#7b82a0;
+  --accent:#5b7fff;--accent2:#38bdf8;--green:#34d399;--amber:#fbbf24;--red:#f87171;
+  --mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+body.theme-dark{--bg:#0c0e14;--surface:#13161f;--surface2:#1a1e2a;--surface3:#0f1118;--border:#ffffff0f;--border2:#ffffff18;--text:#e2e4ed;--muted:#6b7280}
+body.theme-dark textarea{color:#e2e4ed}
+body:not(.theme-dark) textarea{color:#1a1d2e}
+body:not(.theme-dark) .log-item{background:#e8ecf4}
+body.theme-dark .log-item{background:#1a1e2a}
