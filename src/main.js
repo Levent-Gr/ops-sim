@@ -24,13 +24,15 @@ import {
 import {
   renderHistory, toggleHistDetail, deleteHistItem, clearHistory,
   openDeliveryModal, openDeliveryModalById, openDeliveryModalFromObj,
-  closeModal, closeModalDirect, openChargeArchiveModal
+  closeModal, closeModalDirect, openChargeArchiveModal, openChargeArchiveById
 } from './history.js';
 import {
   loadCharges, startCharge, stopCharge,
   toggleChargePanel, manualAddSnapshot, recalibrateAvg, toggleRecalibForm,
   downloadChargeCSV, dismissChargeAlert, saveAlertSnapshot,
-  startChargeAlertTimer, checkChargeAlerts
+  startChargeAlertTimer, checkChargeAlerts,
+  startEditEndTime, cancelEndTimeEdit, saveChargeEndTime,
+  startEditSnapshot, cancelEditSnapshot, saveEditSnapshot
 } from './charge.js';
 import {
   exportFullBackup, importFullBackup, exportProfile, importProfile,
@@ -57,6 +59,13 @@ Object.assign(window, {
   __toggleRecalibForm: toggleRecalibForm,
   __downloadChargeCSV: downloadChargeCSV,
   __saveAlertSnapshot: saveAlertSnapshot,
+  __startEditEndTime: startEditEndTime,
+  __cancelEndTimeEdit: cancelEndTimeEdit,
+  __saveChargeEndTime: saveChargeEndTime,
+  __startEditSnapshot: startEditSnapshot,
+  __cancelEditSnapshot: cancelEditSnapshot,
+  __saveEditSnapshot: saveEditSnapshot,
+  __openChargeArchiveFromDelivery: openChargeArchiveById,
   __startEditGrupName: startEditGrupName,
   __saveGrupName: saveGrupName,
   __toggleGrupNote: toggleGrupNote,

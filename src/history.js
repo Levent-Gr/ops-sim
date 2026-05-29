@@ -393,7 +393,7 @@ export function openDeliveryModal(item, src) {
   } else { barsEl.innerHTML = `<span style="font-size:11px;color:var(--muted)">—</span>`; }
 
   overlay.classList.add('open');
-  if (item && item.id) renderModalChargeSection(item.id);
+  if (item && item.id) renderModalChargeSection(item.id, item);
   else document.getElementById('modalChargeSection').style.display = 'none';
 }
 
@@ -524,4 +524,9 @@ export function openDeliveryModalById(cid) {
 // Yardımcı: serialize edilen objeden aç (arşivlenmiş grup üyesi)
 export function openDeliveryModalFromObj(obj) {
   openDeliveryModal({ ...obj, deliveryName: obj.name, counts: obj.counts || {} });
+}
+// Yardımcı: teslimat modalındaki "Şarj Geçmişi" butonundan arşiv kaydını aç
+export function openChargeArchiveById(histId) {
+  const h = historyStore.histCache.find(x => x.id === histId && x._type === 'charge_archive');
+  if (h) openChargeArchiveModal(h);
 }

@@ -139,6 +139,15 @@ export function calcCurrentStatus(rec, cpt) {
 }
 
 // ─── HTML render ─────────────────────────────────────────────────
+// Aktif şarj başlığında bitiş saati — düzenlenebilir (görüntü + gizli time input)
+function buildChargeEndTimeHTML(rec) {
+  return `${t('charge_end_at')}: <span class="charge-endtime-disp" id="cetDisp-${rec.id}">${safe(rec.chargeEndTime)}</span>` +
+    `<input class="charge-endtime-input" type="time" id="cetInput-${rec.id}" value="${safe(rec.chargeEndTime)}" style="display:none" ` +
+    `onblur="window.__saveChargeEndTime('${rec.id}')" ` +
+    `onkeydown="if(event.key==='Enter'){event.preventDefault();window.__saveChargeEndTime('${rec.id}')}else if(event.key==='Escape'){window.__cancelEndTimeEdit('${rec.id}')}"/>` +
+    `<button type="button" class="btn-edit-endtime" title="${t('edit_endtime')}" aria-label="${t('edit_endtime')}" onclick="window.__startEditEndTime('${rec.id}')">✎</button>`;
+}
+
 export function buildChargePanelHTML(cpt, chargeRec) {
   const ppp = cpt.avgPkgPerPalet || Math.round(cpt.totalPkg / Math.max(1, cpt.palets)) || 150;
   if (!chargeRec) {
@@ -166,7 +175,7 @@ export function buildChargePanelHTML(cpt, chargeRec) {
   const chartId = 'chargeChart-' + chargeRec.id;
   return `<div class="charge-panel">
     <div class="charge-panel-title" style="display:flex;justify-content:space-between;align-items:center">
-      <span>${ICON_BOLT} ${t('charge_active')} — ${t('charge_end_at')}: ${chargeRec.chargeEndTime}</span>
+      <span>${ICON_BOLT} ${t('charge_active')} — ${buildChargeEndTimeHTML(chargeRec)}</span>
       <button class="btn-charge-stop" onclick="window.__stopCharge('${chargeRec.id}')">${t('stop_btn')}</button>
     </div>
 
@@ -183,7 +192,7 @@ export function buildChargePanelHTML(cpt, chargeRec) {
     </div>
     <div class="charge-chart-wrap-palet"><canvas id="${chartId}-palet"></canvas></div>
     ${buildKpiStrip(chargeRec, cpt)}
-    ${buildPaketGaugeHTML(chargeRec)}
+    ${buildPaketGaugeHTML(chargeRec, true)}
 
     <div class="ed-section-title">${ICON_LIST} ${t('forecast_hist')}</div>
     ${historyHTML}
@@ -307,7 +316,7 @@ export function buildCalibrationSectionHTML(rec) {
     </div>`;
 }
 
-export function buildPaketGaugeHTML(rec) {
+export function buildPaketGaugeHTML(rec, editable = false) {
   const snaps = rec.snapshots;
   if (!snaps.length) return '';
   const maxTotal = Math.max(...snaps.map(s => s.total));
@@ -321,11 +330,26 @@ export function buildPaketGaugeHTML(rec) {
       if (diff > 0) deltaTxt = `<span class="pkt-delta-up">+${diff}</span>`;
       else if (diff < 0) deltaTxt = `<span class="pkt-delta-down">${diff}</span>`;
     }
-    return `<div class="pkt-row">
+    const editBtn = editable
+      ? `<button type="button" class="btn-edit-snap" title="${t('edit_data')}" aria-label="${t('edit_data')}" onclick="window.__startEditSnapshot('${rec.id}',${i})">✎</button>`
+      : '';
+    const editRow = editable
+      ? `<div class="pkt-edit-row" id="pktEdit-${rec.id}-${i}" style="display:none">
+          <span class="pkt-edit-lbl">${t('data_total')}</span>
+          <input class="charge-input pkt-edit-inp" type="number" min="0" id="pktEditTotal-${rec.id}-${i}" value="${s.total}"/>
+          <span class="pkt-edit-lbl">${t('data_sent')}</span>
+          <input class="charge-input pkt-edit-inp" type="number" min="0" id="pktEditShipped-${rec.id}-${i}" value="${s.shipped || 0}"/>
+          <div class="pkt-edit-actions">
+            <button type="button" class="btn-pkt-save" onclick="window.__saveEditSnapshot('${rec.id}',${i})">${t('save')}</button>
+            <button type="button" class="btn-pkt-cancel" onclick="window.__cancelEditSnapshot('${rec.id}',${i})">${t('dlg_cancel')}</button>
+          </div>
+        </div>`
+      : '';
+    return `<div class="pkt-row" id="pktRow-${rec.id}-${i}">
       <div class="pkt-time ${isLast ? 'pkt-current' : ''}">${s.time}</div>
       <div class="pkt-track"><div class="pkt-fill ${isLast ? 'pkt-fill-current' : ''}" style="width:${pct}%"></div></div>
-      <div class="pkt-val ${isLast ? 'pkt-current' : ''}">${s.total.toLocaleString('tr-TR')} ${deltaTxt}</div>
-    </div>`;
+      <div class="pkt-val ${isLast ? 'pkt-current' : ''}">${s.total.toLocaleString('tr-TR')} ${deltaTxt}${editBtn}</div>
+    </div>${editRow}`;
   }).join('');
   return `<div class="pkt-section">
     <div class="pkt-head">
@@ -537,6 +561,83 @@ export async function recalibrateAvg(chargeId) {
   if (panel) panel.style.display = 'block';
   const cpt = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
   if (cpt) setTimeout(() => drawChargeChart(rec, cpt), 50);
+}
+
+// ─── Bitiş saati düzenleme (yalnız aktif şarj) ───────────────────
+export function startEditEndTime(chargeId) {
+  const disp = document.getElementById('cetDisp-' + chargeId);
+  const input = document.getElementById('cetInput-' + chargeId);
+  if (!disp || !input) return;
+  disp.style.display = 'none';
+  input.style.display = 'inline-block';
+  input.focus();
+}
+
+export function cancelEndTimeEdit(chargeId) {
+  const disp = document.getElementById('cetDisp-' + chargeId);
+  const input = document.getElementById('cetInput-' + chargeId);
+  if (!disp || !input) return;
+  const rec = chargeStore.chargeCache.find(c => c.id === chargeId);
+  if (rec) input.value = rec.chargeEndTime;
+  input.style.display = 'none';
+  disp.style.display = '';
+}
+
+export async function saveChargeEndTime(chargeId) {
+  const rec = chargeStore.chargeCache.find(c => c.id === chargeId); if (!rec) return;
+  const input = document.getElementById('cetInput-' + chargeId);
+  if (!input) return;
+  const val = (input.value || '').trim();
+  if (!val) { cancelEndTimeEdit(chargeId); return; }
+  if (!/^\d{2}:\d{2}$/.test(val)) { await alertDialog(t('invalid_time')); return; }
+  if (val === rec.chargeEndTime) { cancelEndTimeEdit(chargeId); return; }
+  rec.chargeEndTime = val;
+  await saveCharge(rec);
+  if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+  const panel = document.getElementById('charge-panel-' + rec.deliveryId);
+  if (panel) panel.style.display = 'block';
+  const cpt = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
+  if (cpt) setTimeout(() => drawChargeChart(rec, cpt), 50);
+  renderModalChargeSection(rec.deliveryId);
+}
+
+// ─── Snapshot (total/gönderilen) düzenleme (yalnız aktif şarj) ────
+export function startEditSnapshot(chargeId, idx) {
+  const row = document.getElementById('pktRow-' + chargeId + '-' + idx);
+  const edit = document.getElementById('pktEdit-' + chargeId + '-' + idx);
+  if (!row || !edit) return;
+  row.style.display = 'none';
+  edit.style.display = 'grid';
+  const ti = document.getElementById('pktEditTotal-' + chargeId + '-' + idx);
+  if (ti) { ti.focus(); ti.select(); }
+}
+
+export function cancelEditSnapshot(chargeId, idx) {
+  const row = document.getElementById('pktRow-' + chargeId + '-' + idx);
+  const edit = document.getElementById('pktEdit-' + chargeId + '-' + idx);
+  if (!row || !edit) return;
+  edit.style.display = 'none';
+  row.style.display = '';
+}
+
+export async function saveEditSnapshot(chargeId, idx) {
+  const rec = chargeStore.chargeCache.find(c => c.id === chargeId); if (!rec) return;
+  if (!rec.snapshots || !rec.snapshots[idx]) return;
+  const ti = document.getElementById('pktEditTotal-' + chargeId + '-' + idx);
+  const si = document.getElementById('pktEditShipped-' + chargeId + '-' + idx);
+  const total = parseInt(ti?.value);
+  if (isNaN(total) || total < 0) { await alertDialog(t('valid_total_required')); return; }
+  let shipped = parseInt(si?.value);
+  if (isNaN(shipped) || shipped < 0) shipped = 0;
+  rec.snapshots[idx].total = total;
+  rec.snapshots[idx].shipped = shipped;
+  await saveCharge(rec);
+  if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+  const panel = document.getElementById('charge-panel-' + rec.deliveryId);
+  if (panel) panel.style.display = 'block';
+  const cpt = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
+  if (cpt) setTimeout(() => drawChargeChart(rec, cpt), 50);
+  renderModalChargeSection(rec.deliveryId);
 }
 
 export function toggleRecalibForm(chargeId) {
@@ -776,11 +877,11 @@ function playChimeSound() {
 }
 
 // ─── Modal şarj bölümü ───────────────────────────────────────────
-export function renderModalChargeSection(deliveryId) {
+export function renderModalChargeSection(deliveryId, deliveryObj) {
   const chargeRec = chargeStore.chargeCache.find(c => c.deliveryId === deliveryId && c.active);
   const sec = document.getElementById('modalChargeSection');
   if (!sec) return;
-  if (!chargeRec) { sec.style.display = 'none'; return; }
+  if (!chargeRec) { renderModalPastCharge(deliveryId, sec, deliveryObj); return; }
   const cpt = deliveryStore.deliveries.find(c => c.id === deliveryId);
   if (!cpt) { sec.style.display = 'none'; return; }
   const status = calcCurrentStatus(chargeRec, cpt);
@@ -790,7 +891,7 @@ export function renderModalChargeSection(deliveryId) {
   sec.style.display = 'block';
   sec.innerHTML = `<div class="charge-panel" style="margin-top:0">
     <div class="charge-panel-title" style="display:flex;justify-content:space-between;align-items:center">
-      <span>${ICON_BOLT} ${t('charge_active')} — ${t('charge_end_at')}: ${chargeRec.chargeEndTime}</span>
+      <span>${ICON_BOLT} ${t('charge_active')} — ${buildChargeEndTimeHTML(chargeRec)}</span>
       <button class="btn-charge-stop" onclick="window.__stopCharge('${chargeRec.id}');window.__closeModalDirect()">${t('stop_btn')}</button>
     </div>
 
@@ -807,7 +908,7 @@ export function renderModalChargeSection(deliveryId) {
     </div>
     <div class="charge-chart-wrap-palet-lg"><canvas id="${chartId}-palet"></canvas></div>
     ${buildKpiStrip(chargeRec, cpt)}
-    ${buildPaketGaugeHTML(chargeRec)}
+    ${buildPaketGaugeHTML(chargeRec, true)}
 
     <div class="ed-section-title">${ICON_LIST} ${t('forecast_hist')}</div>
     ${historyHTML}
@@ -828,4 +929,50 @@ export function renderModalChargeSection(deliveryId) {
     </div>
   </div>`;
   setTimeout(() => drawChargeChart(chargeRec, cpt, chartId), 50);
+}
+
+// Aktif şarj yoksa: bu teslimata ait tamamlanmış (arşiv) şarj kaydının
+// geçmiş verisini salt-okunur grafik olarak modalda göster.
+// NOT: Geçmiş (TES) kaydı ile teslimat kaydı farklı uid() alır (sim.js); bu yüzden
+// id eşleşmesi güvenilir değildir. Asıl bağ teslimat ADIdır (+ aynı gün).
+function renderModalPastCharge(deliveryId, sec, deliveryObj) {
+  const name = deliveryObj && (deliveryObj.deliveryName || deliveryObj.name);
+  const dayOf = s => String(s || '').split(/[\s,]+/)[0];
+  const wantDay = deliveryObj ? dayOf(deliveryObj.date || deliveryObj.archivedAt) : '';
+  let candidates = historyStore.histCache.filter(h =>
+    h._type === 'charge_archive' && Array.isArray(h.snapshots) && h.snapshots.length &&
+    (h.deliveryId === deliveryId || (name && h.deliveryName === name)));
+  if (!candidates.length) { sec.style.display = 'none'; return; }
+  // Aynı isim farklı günlerde kullanılmışsa: teslimatla aynı güne ait kaydı önceliklendir.
+  if (wantDay) {
+    const sameDay = candidates.filter(h => dayOf(h.startedAt) === wantDay || dayOf(h.stoppedAt) === wantDay);
+    if (sameDay.length) candidates = sameDay;
+  }
+  candidates.sort((a, b) => (b._ts || 0) - (a._ts || 0));
+  const h = candidates[0];
+  const recLike = {
+    id: h.chargeId || h.id, deliveryId: h.deliveryId, deliveryName: h.deliveryName,
+    snapshots: h.snapshots, calibrations: h.calibrations || [],
+    avgPkgPerPalet: h.avgPkgPerPalet, chargeEndTime: h.chargeEndTime,
+    startedAt: h.startedAt, startedAtMs: h._ts
+  };
+  const cpt = deliveryStore.deliveries.find(c => c.id === deliveryId)
+    || deliveryObj
+    || historyStore.histCache.find(x => x.id === deliveryId && x._type !== 'charge_archive' && x._type !== 'grup_archive')
+    || { id: deliveryId, name: h.deliveryName, palets: 0, existingPalet: 0, totalPkg: 0, avgPkgPerPalet: h.avgPkgPerPalet };
+  const chartId = 'modalPastChargeChart-' + h.id;
+  sec.style.display = 'block';
+  sec.innerHTML = `<div class="charge-panel" style="margin-top:0">
+    <div class="charge-panel-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <span>${ICON_BOLT} ${t('past_charge_data')} — ${t('charge_end_at')}: ${safe(h.chargeEndTime || '—')}</span>
+      <button type="button" class="btn-download-csv" onclick="window.__openChargeArchiveFromDelivery('${safe(h.id)}')">${ICON_LIST} ${t('charge_history')}</button>
+    </div>
+    <div class="charge-chart-wrap-palet-lg"><canvas id="${chartId}-palet"></canvas></div>
+    ${buildKpiStrip(recLike, cpt)}
+    ${buildPaketGaugeHTML(recLike)}
+    <div class="ed-section-title">${ICON_LIST} ${t('forecast_hist')}</div>
+    ${buildForecastHistoryHTML(recLike, cpt)}
+    ${buildCalibrationHistoryReadOnlyHTML(recLike)}
+  </div>`;
+  setTimeout(() => drawChargeChart(recLike, cpt, chartId), 50);
 }
