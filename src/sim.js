@@ -357,7 +357,12 @@ export async function runSim() {
     document.getElementById('kpiAvg').textContent = '—';
     return;
   }
-  const rng = seeded(1234); shuffle(items, rng);
+  // Her hesaplama farklı (ama yine geçerli) bir yerleşim üretsin diye seed her çalıştırmada
+  // değişir. Algoritma (shuffle + ağırlıklı dağıtım) aynıdır; yalnızca rastgelelik kaynağı
+  // sabit değil. NOT: saf çekirdek simulatePacking() bilerek deterministik (1234) kalır —
+  // şarj tahminleri ve birim testleri ona dayanır.
+  const runSeed = (Date.now() ^ Math.floor(Math.random() * 0x100000000)) >>> 0;
+  const rng = seeded(runSeed); shuffle(items, rng);
   const totalVol = items.reduce((a, b) => a + b.vol, 0);
   const estPalets = Math.max(1, Math.ceil(totalVol / configStore.PALET_VOL));
   setProgress(38, 'Kapasite...'); await delay(400);
