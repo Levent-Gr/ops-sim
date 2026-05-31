@@ -52,6 +52,23 @@ export function confirmDialog(message) {
   });
 }
 
+// Kısa süreli kayan bildirim (ör. "Kaydedildi"). Modal üstünde görünür.
+let _toastTimer = null;
+export function showToast(message) {
+  let el = document.getElementById('app-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'app-toast';
+    el.className = 'app-toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  void el.offsetWidth; // animasyonu yeniden başlatmak için reflow
+  el.classList.add('show');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.classList.remove('show'); }, 1800);
+}
+
 // Bilgi/uyarı modalı → Promise<void>
 export function alertDialog(message) {
   return new Promise(resolve => {

@@ -303,7 +303,8 @@ export async function runSim() {
   if (!rawLines.length) { showWarn(t('warn_no_input')); return; }
   if (configStore.PALET_VOL <= 0) { showWarn(t('warn_no_vol')); return; }
 
-  const existingPalet = Math.max(0, parseInt(document.getElementById('existingPaletInput').value) || 0);
+  // Mevcut palet tam sayı olmak zorunda değil — saha durumlarında ondalık girilebilir.
+  const existingPalet = Math.max(0, parseFloat(document.getElementById('existingPaletInput').value) || 0);
 
   uiStore.simRunning = true;
   const btn = document.getElementById('runBtn');

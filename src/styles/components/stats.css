@@ -1,0 +1,84 @@
+/* ─── Modal: Gerçekleşen palet girişi + tahmin kıyası ─────────────── */
+.actual-pred-row{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 12px}
+.actual-pred-item{flex:1;min-width:120px;background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.actual-pred-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.actual-pred-item b{font-family:var(--mono);font-size:16px;color:var(--text)}
+.actual-entry-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.actual-entry-row .charge-input{max-width:160px}
+.actual-entry-row .charge-label{min-width:120px}
+.actual-folder-input{max-width:200px!important}
+.actual-delta{margin-top:6px;font-family:var(--mono);font-size:12px;min-height:16px}
+.actual-delta-good{color:var(--green,#10b981);font-weight:600}
+.actual-delta-mid{color:#d99a16;font-weight:600}
+.actual-delta-bad{color:#ef4444;font-weight:600}
+.actual-charge-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;margin:2px 0 12px}
+.actual-charge-badge.on{color:var(--green,#10b981);background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3)}
+.actual-charge-badge.off{color:var(--muted);background:var(--surface3);border:1px solid var(--border)}
+.actual-pred-item.pred-primary{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+
+/* ─── İstatistik sayfası ──────────────────────────────────────────── */
+.stats-empty{font-size:12px;color:var(--muted);line-height:1.7;padding:18px;background:var(--surface3);border:1px dashed var(--border);border-radius:10px}
+
+/* Filtre çubuğu */
+.stats-filterbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.stats-period{display:inline-flex;background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:2px;gap:2px}
+.stats-period-btn{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:5px 10px;border-radius:6px;transition:background .15s,color .15s}
+.stats-period-btn:hover{color:var(--text)}
+.stats-period-btn.on{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.stats-search{flex:1;min-width:140px;max-width:280px;font-size:12px;color:var(--text);background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:7px 12px}
+.stats-search:focus{outline:none;border-color:var(--accent)}
+.stats-back-btn{font-size:11px;color:var(--accent);background:var(--surface3);border:1px solid var(--border);border-radius:8px;cursor:pointer;padding:6px 12px}
+.stats-back-btn:hover{background:var(--surface)}
+
+.stats-kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
+.stats-kpi{background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.stats-kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.stats-kpi-val{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--text)}
+.stats-kpi-unit{font-size:11px;color:var(--muted);font-weight:400;margin-left:2px}
+
+.stats-section-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.4px;margin:18px 0 8px}
+
+/* Klasör özet kartları */
+.stats-folder-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.stats-folder-card{background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:11px 13px;cursor:pointer;transition:background .15s,border-color .15s}
+.stats-folder-card:hover{background:var(--surface);border-color:var(--accent)}
+.stats-folder-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stats-folder-sub{font-size:10px;color:var(--muted);font-family:var(--mono)}
+.stats-folder-sub b{color:var(--text)}
+
+.stats-hint{font-size:9px;color:var(--muted);letter-spacing:0;text-transform:none;font-weight:400}
+.stats-chart-scroll{overflow-x:auto;overflow-y:hidden;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px}
+.stats-chart-inner{position:relative;height:240px;min-width:100%}
+.stats-chart-scroll::-webkit-scrollbar{height:8px}
+.stats-chart-scroll::-webkit-scrollbar-thumb{background:var(--border2,var(--border));border-radius:4px}
+
+/* Tablo */
+.stats-table-scroll{max-height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:10px}
+.stats-table{display:flex;flex-direction:column}
+.stats-trow{display:grid;grid-template-columns:minmax(70px,1.4fr) minmax(64px,1fr) 80px 40px 64px 74px 56px 42px;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text)}
+.stats-trow:last-child{border-bottom:none}
+.stats-trow[data-id]{cursor:pointer}
+.stats-trow[data-id]:hover{background:var(--surface3)}
+.stats-thead{position:sticky;top:0;z-index:1;background:var(--surface2);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;cursor:default}
+.stats-sort{cursor:pointer;user-select:none}
+.stats-sort:hover{color:var(--text)}
+.stats-td{font-family:var(--mono);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stats-td-name{font-family:inherit;text-align:left;font-weight:500}
+.stats-td-folder{font-family:inherit;text-align:left;color:var(--muted);font-size:11px}
+.stats-td-date{text-align:left;color:var(--muted);font-size:11px}
+.stats-td-actual{color:var(--text);font-weight:600;display:flex;align-items:center;justify-content:flex-end;gap:4px}
+.stats-good{color:var(--green,#10b981);font-weight:600}
+.stats-mid{color:#d99a16;font-weight:600}
+.stats-bad{color:#ef4444;font-weight:600}
+
+/* Satır içi düzenle/sil */
+.stats-row-edit,.stats-row-del{opacity:0;background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);padding:0 2px;line-height:1;transition:opacity .12s,color .12s}
+.stats-trow:hover .stats-row-edit,.stats-trow:hover .stats-row-del{opacity:.7}
+.stats-row-edit:hover{color:var(--accent);opacity:1}
+.stats-row-del:hover{color:#ef4444;opacity:1}
+.stats-edit-cell{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.stats-edit-input{width:48px;font-family:var(--mono);font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--accent);border-radius:5px;padding:3px 5px;text-align:right}
+.stats-edit-input:focus{outline:none}
+.stats-edit-save,.stats-edit-cancel{background:none;border:none;cursor:pointer;font-size:12px;padding:0 2px;line-height:1}
+.stats-edit-save{color:var(--green,#10b981)}
+.stats-edit-cancel{color:#ef4444}

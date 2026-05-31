@@ -42,6 +42,8 @@ export async function saveCharge(rec) {
 
 async function saveChargeToHistory(rec) {
   try {
+    const cpt = deliveryStore.deliveries.find(c => c.id === rec.deliveryId) || {};
+    const st = calcArchivedFinalStatus(rec, cpt);
     const histRec = {
       _type: 'charge_archive',
       id: 'cha_' + rec.id,
@@ -54,6 +56,8 @@ async function saveChargeToHistory(rec) {
       stoppedAt: rec.stoppedAt || nowStr(),
       snapshots: rec.snapshots || [],
       calibrations: rec.calibrations || [],
+      predictedFinalPalet: st.finalPalet,
+      predictedFinalPkg: st.arrivedPkg + st.remainingPkg,
       date: rec.startedAt || nowStr(),
       _ts: rec.startedAtMs || Date.now()
     };
@@ -128,6 +132,88 @@ export function calcCurrentStatus(rec, cpt) {
   const fc = calcForecast(rec, cpt);
   const remainingPkg = fc ? fc.extraPkg : 0;
   const remainingPalet = fc ? fc.extraPalet : 0;
+  const finalPalet = existingPalet + simPalet + arrived.palet + remainingPalet;
+  return {
+    existingPalet, simPalet,
+    arrivedPkg: arrived.pkg, arrivedPalet: arrived.palet,
+    remainingPkg, remainingPalet,
+    finalPalet,
+    avgPkgPerPalet: rec.avgPkgPerPalet || 0
+  };
+}
+
+// Bir teslimata ait arşivlenmiş şarj kaydını bulur. TES kaydı ile charge_archive ayrı
+// uid aldığından eşleşme isim (+ aynı gün önceliği) ile yapılır.
+export function findArchivedChargeForDelivery(deliveryId, deliveryObj) {
+  const name = deliveryObj && (deliveryObj.deliveryName || deliveryObj.name);
+  const dayOf = s => String(s || '').split(/[\s,]+/)[0];
+  const wantDay = deliveryObj ? dayOf(deliveryObj.date || deliveryObj.archivedAt) : '';
+  let candidates = historyStore.histCache.filter(h =>
+    h._type === 'charge_archive' && Array.isArray(h.snapshots) && h.snapshots.length &&
+    (h.deliveryId === deliveryId || (name && h.deliveryName === name)));
+  if (!candidates.length) return null;
+  if (wantDay) {
+    const sameDay = candidates.filter(h => dayOf(h.startedAt) === wantDay || dayOf(h.stoppedAt) === wantDay);
+    if (sameDay.length) candidates = sameDay;
+  }
+  candidates.sort((a, b) => (b._ts || 0) - (a._ts || 0));
+  return candidates[0];
+}
+
+// charge_archive kaydından şarj sonu tahmini palet: kayıtta saklıysa onu, yoksa anında hesapla.
+export function getPredictedFinalPalet(h, cpt) {
+  if (!h) return null;
+  if (typeof h.predictedFinalPalet === 'number') return h.predictedFinalPalet;
+  const recLike = {
+    id: h.chargeId || h.id, deliveryId: h.deliveryId, deliveryName: h.deliveryName,
+    snapshots: h.snapshots, calibrations: h.calibrations || [],
+    avgPkgPerPalet: h.avgPkgPerPalet, chargeEndTime: h.chargeEndTime,
+    startedAt: h.startedAt, startedAtMs: h._ts
+  };
+  return calcArchivedFinalStatus(recLike, cpt || {}).finalPalet;
+}
+
+// Bu teslimatın AKTİF şarjını bulur. Geçmiş'ten açılınca TES id'si şarjın deliveryId'siyle
+// eşleşmez; bu yüzden id BULAMAZSA isim (+ aynı gün) ile arar.
+export function findActiveChargeForDelivery(deliveryId, deliveryObj) {
+  const direct = chargeStore.chargeCache.find(c => c.active && c.deliveryId === deliveryId);
+  if (direct) return direct;
+  const name = deliveryObj && (deliveryObj.deliveryName || deliveryObj.name);
+  if (!name) return null;
+  const dayOf = s => String(s || '').split(/[\s,]+/)[0];
+  const wantDay = deliveryObj ? dayOf(deliveryObj.date || deliveryObj.archivedAt) : '';
+  const byName = chargeStore.chargeCache.filter(c => c.active && c.deliveryName === name);
+  if (!byName.length) return null;
+  return byName.find(c => !wantDay || dayOf(c.startedAt) === wantDay) || byName[0];
+}
+
+// Bir teslimatın şarj durumu + şarj sonu tahmini palet (aktif şarj VEYA arşiv).
+// { hasCharge, active, finalPalet }
+export function getDeliveryChargeInfo(deliveryId, deliveryObj) {
+  const act = findActiveChargeForDelivery(deliveryId, deliveryObj);
+  if (act) {
+    const cpt = deliveryStore.deliveries.find(c => c.id === act.deliveryId) || deliveryObj || {};
+    return { hasCharge: true, active: true, finalPalet: calcCurrentStatus(act, cpt).finalPalet };
+  }
+  const arch = findArchivedChargeForDelivery(deliveryId, deliveryObj);
+  if (arch) return { hasCharge: true, active: false, finalPalet: getPredictedFinalPalet(arch, deliveryObj) };
+  return { hasCharge: false, active: false, finalPalet: null };
+}
+
+// Geçmiş (durmuş) şarj için "şarj sonu tahmini" durumu — canlı calcCurrentStatus'un
+// dondurulmuş hali. calcForecast "şimdi"yi kullandığından geçmişte kalan süre 0 verir;
+// bunun yerine SON snapshot'taki tahmin (kendi zaman damgasıyla) kullanılır. Sonuç,
+// renderStatusHTML ile birebir uyumlu alanlar döner (existing+sim+gelen+kalan = final).
+export function calcArchivedFinalStatus(rec, cpt) {
+  cpt = cpt || {};
+  const cal0 = (rec.calibrations && rec.calibrations[0]) || {};
+  const existingPalet = (cpt.existingPalet != null && cpt.existingPalet > 0) ? cpt.existingPalet : (cal0.existingPalet || 0);
+  const simPalet = (cpt.palets != null && cpt.palets > 0) ? cpt.palets : (cal0.paletCount || 0);
+  const arrived = calcShippedSoFar(rec);
+  const lastIdx = (rec.snapshots || []).length - 1;
+  const fc = lastIdx >= 1 ? calcForecastAtIndex(rec, cpt, lastIdx) : null;
+  const remainingPalet = fc ? fc.extraPalet : 0;
+  const remainingPkg = fc ? fc.extraPkg : 0;
   const finalPalet = existingPalet + simPalet + arrived.palet + remainingPalet;
   return {
     existingPalet, simPalet,
@@ -878,12 +964,16 @@ function playChimeSound() {
 
 // ─── Modal şarj bölümü ───────────────────────────────────────────
 export function renderModalChargeSection(deliveryId, deliveryObj) {
-  const chargeRec = chargeStore.chargeCache.find(c => c.deliveryId === deliveryId && c.active);
   const sec = document.getElementById('modalChargeSection');
   if (!sec) return;
+  // Aktif şarjı id VEYA isim(+gün) ile bul (Geçmiş'ten açınca TES id'si eşleşmez).
+  const chargeRec = findActiveChargeForDelivery(deliveryId, deliveryObj);
   if (!chargeRec) { renderModalPastCharge(deliveryId, sec, deliveryObj); return; }
-  const cpt = deliveryStore.deliveries.find(c => c.id === deliveryId);
-  if (!cpt) { sec.style.display = 'none'; return; }
+  // cpt: önce şarjın kendi teslimat kaydı, sonra geçilen id, sonra modal objesi.
+  const cpt = deliveryStore.deliveries.find(c => c.id === chargeRec.deliveryId)
+    || deliveryStore.deliveries.find(c => c.id === deliveryId)
+    || deliveryObj
+    || { id: deliveryId, name: chargeRec.deliveryName, palets: 0, existingPalet: 0, totalPkg: 0, avgPkgPerPalet: chargeRec.avgPkgPerPalet };
   const status = calcCurrentStatus(chargeRec, cpt);
   const forecast = calcForecast(chargeRec, cpt);
   const historyHTML = buildForecastHistoryHTML(chargeRec, cpt);
@@ -936,20 +1026,8 @@ export function renderModalChargeSection(deliveryId, deliveryObj) {
 // NOT: Geçmiş (TES) kaydı ile teslimat kaydı farklı uid() alır (sim.js); bu yüzden
 // id eşleşmesi güvenilir değildir. Asıl bağ teslimat ADIdır (+ aynı gün).
 function renderModalPastCharge(deliveryId, sec, deliveryObj) {
-  const name = deliveryObj && (deliveryObj.deliveryName || deliveryObj.name);
-  const dayOf = s => String(s || '').split(/[\s,]+/)[0];
-  const wantDay = deliveryObj ? dayOf(deliveryObj.date || deliveryObj.archivedAt) : '';
-  let candidates = historyStore.histCache.filter(h =>
-    h._type === 'charge_archive' && Array.isArray(h.snapshots) && h.snapshots.length &&
-    (h.deliveryId === deliveryId || (name && h.deliveryName === name)));
-  if (!candidates.length) { sec.style.display = 'none'; return; }
-  // Aynı isim farklı günlerde kullanılmışsa: teslimatla aynı güne ait kaydı önceliklendir.
-  if (wantDay) {
-    const sameDay = candidates.filter(h => dayOf(h.startedAt) === wantDay || dayOf(h.stoppedAt) === wantDay);
-    if (sameDay.length) candidates = sameDay;
-  }
-  candidates.sort((a, b) => (b._ts || 0) - (a._ts || 0));
-  const h = candidates[0];
+  const h = findArchivedChargeForDelivery(deliveryId, deliveryObj);
+  if (!h) { sec.style.display = 'none'; return; }
   const recLike = {
     id: h.chargeId || h.id, deliveryId: h.deliveryId, deliveryName: h.deliveryName,
     snapshots: h.snapshots, calibrations: h.calibrations || [],
@@ -967,6 +1045,7 @@ function renderModalPastCharge(deliveryId, sec, deliveryObj) {
       <span>${ICON_BOLT} ${t('past_charge_data')} — ${t('charge_end_at')}: ${safe(h.chargeEndTime || '—')}</span>
       <button type="button" class="btn-download-csv" onclick="window.__openChargeArchiveFromDelivery('${safe(h.id)}')">${ICON_LIST} ${t('charge_history')}</button>
     </div>
+    ${renderStatusHTML(calcArchivedFinalStatus(recLike, cpt))}
     <div class="charge-chart-wrap-palet-lg"><canvas id="${chartId}-palet"></canvas></div>
     ${buildKpiStrip(recLike, cpt)}
     ${buildPaketGaugeHTML(recLike)}

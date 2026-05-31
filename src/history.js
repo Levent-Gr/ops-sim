@@ -1,7 +1,7 @@
 import { configStore, deliveryStore, historyStore, uiStore } from './state.js';
-import { STORES, idbGetAll, idbDelete, idbClear } from './db.js';
+import { STORES, idbGetAll, idbDelete, idbClear, idbPut } from './db.js';
 import { t } from './i18n.js';
-import { isToday, safe } from './utils.js';
+import { isToday, safe, nowStr } from './utils.js';
 import { svgIconBox, svgIconCalendar, svgIconFolder, ICON_BOLT, ICON_LIST, ICON_DOWNLOAD } from './icons.js';
 import { cat, getCatOfPkg } from './config.js';
 import { drawDonutTo } from './sim.js';
@@ -9,9 +9,10 @@ import {
   drawChargeChart, calcForecastAtIndex, calcShippedSoFar,
   buildEditorialHeadRight, buildKpiStrip, buildPaketGaugeHTML,
   buildForecastHistoryHTML, buildCalibrationHistoryReadOnlyHTML,
-  renderModalChargeSection, destroyChargeCharts
+  renderModalChargeSection, destroyChargeCharts,
+  getDeliveryChargeInfo
 } from './charge.js';
-import { confirmDialog } from './dialog.js';
+import { confirmDialog, alertDialog, showToast } from './dialog.js';
 
 async function _loadAndCacheHistory() {
   try {
@@ -395,6 +396,91 @@ export function openDeliveryModal(item, src) {
   overlay.classList.add('open');
   if (item && item.id) renderModalChargeSection(item.id, item);
   else document.getElementById('modalChargeSection').style.display = 'none';
+
+  // Gerçekleşen palet girişi yalnız Geçmiş'ten açılınca (TES kaydı) gösterilir.
+  const actualBlock = document.getElementById('modalActualBlock');
+  if (src === 'hist' && item && item.id) renderModalActualBlock(item);
+  else if (actualBlock) actualBlock.style.display = 'none';
+}
+
+// ─── Gerçekleşen palet girişi + tahmin kıyası (Geçmiş modalı) ─────
+function _actualDeltaHTML(actual, toolPred) {
+  if (actual == null || actual === '' || toolPred == null) return '';
+  const a = Number(actual), p = Number(toolPred);
+  const err = a - p;
+  const abs = Math.abs(err);
+  const pct = a > 0 ? Math.round(abs / a * 100) : 0;
+  const cls = abs <= 1 ? 'actual-delta-good' : (pct <= 15 ? 'actual-delta-mid' : 'actual-delta-bad');
+  const sign = err > 0 ? '+' : (err < 0 ? '−' : '±');
+  return `<span class="${cls}">${t('deviation')}: ${sign}${abs} ${t('palet_lbl')} (${pct}%)</span>`;
+}
+
+// Klasör adı önerileri: mevcut teslimat klasörleri ∪ geçmişte kullanılmış statFolder'lar.
+export function getFolderSuggestions() {
+  const set = new Set();
+  (deliveryStore.deliveryFolders || []).forEach(f => { if (f && f.name) set.add(f.name); });
+  (historyStore.histCache || []).forEach(h => { if (h && h.statFolder) set.add(h.statFolder); });
+  return [...set].sort((a, b) => a.localeCompare(b, 'tr'));
+}
+
+function renderModalActualBlock(item) {
+  const block = document.getElementById('modalActualBlock');
+  if (!block) return;
+  const simPalet = (item.palets || 0) + (item.existingPalet || 0);
+  const ci = getDeliveryChargeInfo(item.id, item);
+  const chargePred = ci.hasCharge ? ci.finalPalet : null;
+  const toolPred = chargePred != null ? chargePred : simPalet;
+  const actual = (item.actualPalet != null && item.actualPalet !== '') ? item.actualPalet : '';
+  const folder = item.statFolder || '';
+  const opts = getFolderSuggestions().map(name => `<option value="${safe(name)}"></option>`).join('');
+  const badge = ci.hasCharge
+    ? `<div class="actual-charge-badge on">${ICON_BOLT} ${ci.active ? t('charge_active_badge') : t('charge_used_badge')}</div>`
+    : `<div class="actual-charge-badge off">${t('no_charge_badge')}</div>`;
+  block.style.display = 'block';
+  block.innerHTML = `<div class="card" style="padding:14px">
+    <div class="modal-section-label">${t('actual_result')}</div>
+    ${badge}
+    <div class="actual-pred-row">
+      <div class="actual-pred-item ${chargePred == null ? 'pred-primary' : ''}"><span class="actual-pred-lbl">${t('sim_prediction')}</span><b>${simPalet}</b></div>
+      ${chargePred != null ? `<div class="actual-pred-item pred-primary"><span class="actual-pred-lbl">${t('charge_final_prediction')}</span><b>${chargePred}</b></div>` : ''}
+    </div>
+    <div class="actual-entry-row">
+      <span class="charge-label">${t('folder_label')}</span>
+      <input class="charge-input actual-folder-input" list="folderSuggest" id="actualFolder-${safe(item.id)}" value="${folder !== '' ? safe(folder) : ''}" placeholder="${t('folder_label')}…"/>
+      <datalist id="folderSuggest">${opts}</datalist>
+    </div>
+    <div class="actual-entry-row">
+      <span class="charge-label">${t('actual_palet_label')}</span>
+      <input class="charge-input" type="number" min="0" step="any" id="actualPalet-${safe(item.id)}" value="${actual !== '' ? safe(String(actual)) : ''}" placeholder="${safe(String(toolPred))}"/>
+      <button class="btn-charge-snapshot" onclick="window.__saveActualPalet('${safe(item.id)}')">${t('save')}</button>
+    </div>
+    <div id="actualDelta-${safe(item.id)}" class="actual-delta">${_actualDeltaHTML(actual, toolPred)}</div>
+  </div>`;
+}
+
+export async function saveActualPalet(id) {
+  const input = document.getElementById('actualPalet-' + id);
+  if (!input) return;
+  const item = _getHistById(id);
+  if (!item) return;
+  const raw = (input.value || '').trim();
+  if (raw === '') {
+    // Boş bırakma = kaydı istatistikten çıkar
+    delete item.actualPalet; delete item.actualPaletAt;
+  } else {
+    const v = parseFloat(raw);
+    if (isNaN(v) || v < 0) { await alertDialog(t('valid_total_required')); return; }
+    const folder = (document.getElementById('actualFolder-' + id)?.value || '').trim();
+    if (!folder) { await alertDialog(t('folder_required')); return; }
+    item.actualPalet = v;
+    item.statFolder = folder;
+    item.actualPaletAt = nowStr();
+  }
+  await idbPut(STORES.history, item);
+  const idx = historyStore.histCache.findIndex(h => h.id === id);
+  if (idx >= 0) historyStore.histCache[idx] = item;
+  renderModalActualBlock(item);
+  showToast('✓ ' + t('saved_toast'));
 }
 
 export function closeModal(e) {

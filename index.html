@@ -15,6 +15,7 @@
   <div class="nav on" data-tab="sim" data-i18n-nav="nav_sim">Hesaplama</div>
   <div class="nav" data-tab="delivery" data-i18n-nav="nav_delivery">Teslimat Yönetimi</div>
   <div class="nav" data-tab="gecmis" data-i18n-nav="nav_history">Geçmiş</div>
+  <div class="nav" data-tab="istatistik" data-i18n-nav="nav_stats">İstatistik</div>
   <div class="nav" data-tab="grup" data-i18n-nav="nav_groups">Gruplar</div>
   <div class="divider"></div>
   <div class="nav" data-tab="ayarlar" data-i18n-nav="nav_settings">Ayarlar</div>
@@ -69,7 +70,7 @@
         </div>
         <div class="existing-palet-row" id="existingPaletRow">
           <span class="ep-label" data-i18n="existing_palet">Mevcut Palet</span>
-          <input class="ep-input" id="existingPaletInput" type="number" min="0" value="0" data-i18n-ph="existing_palet_ph" placeholder="0"/>
+          <input class="ep-input" id="existingPaletInput" type="number" min="0" step="any" value="0" data-i18n-ph="existing_palet_ph" placeholder="0"/>
           <span class="ep-hint" data-i18n="existing_palet_hint">Sahada zaten bulunan palet sayısı</span>
         </div>
         <div class="input-engine">
@@ -338,6 +339,14 @@
     </div>
   </div>
 
+  <!-- İSTATİSTİK -->
+  <div class="tab-view" id="tab-istatistik">
+    <div class="card">
+      <div class="clabel" style="margin-bottom:14px" data-i18n="stats_title">İstatistik</div>
+      <div id="statsContent"></div>
+    </div>
+  </div>
+
 </div>
 </div>
 
@@ -405,6 +414,7 @@
       </div>
     </div>
     <div id="modalChargeSection" style="display:none;margin-top:12px"></div>
+    <div id="modalActualBlock" style="display:none;margin-top:12px"></div>
   </div>
 </div>
 

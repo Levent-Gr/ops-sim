@@ -24,8 +24,10 @@ import {
 import {
   renderHistory, toggleHistDetail, deleteHistItem, clearHistory,
   openDeliveryModal, openDeliveryModalById, openDeliveryModalFromObj,
-  closeModal, closeModalDirect, openChargeArchiveModal, openChargeArchiveById
+  closeModal, closeModalDirect, openChargeArchiveModal, openChargeArchiveById,
+  saveActualPalet
 } from './history.js';
+import { renderStats } from './stats.js';
 import {
   loadCharges, startCharge, stopCharge,
   toggleChargePanel, manualAddSnapshot, recalibrateAvg, toggleRecalibForm,
@@ -66,6 +68,7 @@ Object.assign(window, {
   __cancelEditSnapshot: cancelEditSnapshot,
   __saveEditSnapshot: saveEditSnapshot,
   __openChargeArchiveFromDelivery: openChargeArchiveById,
+  __saveActualPalet: saveActualPalet,
   __startEditGrupName: startEditGrupName,
   __saveGrupName: saveGrupName,
   __toggleGrupNote: toggleGrupNote,
@@ -88,6 +91,7 @@ async function showTab(id, el) {
   document.getElementById('tab-' + id).classList.add('active');
   el.classList.add('on');
   if (id === 'gecmis') renderHistory();
+  if (id === 'istatistik') { await loadDeliveries(); await loadDeliveryFolders(); renderStats(); }
   if (id === 'delivery') { await loadDeliveries(); await loadDeliveryFolders(); renderDeliveries(); }
   if (id === 'grup') { await loadDeliveries(); await loadGrups(); renderGrupTab(); }
   if (id === 'ayarlar') { renderThemeBtns(); renderPaletVolUI(); renderPkgCfgList(); }

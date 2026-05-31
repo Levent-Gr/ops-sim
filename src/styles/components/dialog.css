@@ -9,3 +9,7 @@
 .app-dialog-ok{background:var(--accent,#2563eb);border-color:transparent;color:#fff}
 .app-dialog-ok:hover{filter:brightness(1.08)}
 .app-dialog-cancel:hover{border-color:var(--muted);color:var(--muted)}
+
+/* Kayan bildirim (toast) */
+.app-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);z-index:3000;background:var(--surface);border:1px solid rgba(52,211,153,.3);color:var(--green,#10b981);font-size:13px;font-weight:600;padding:10px 18px;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease}
+.app-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
