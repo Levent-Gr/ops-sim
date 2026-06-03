@@ -29,6 +29,20 @@
 .stats-search:focus{outline:none;border-color:var(--accent)}
 .stats-back-btn{font-size:11px;color:var(--accent);background:var(--surface3);border:1px solid var(--border);border-radius:8px;cursor:pointer;padding:6px 12px}
 .stats-back-btn:hover{background:var(--surface)}
+.stats-grpedit-toggle{font-size:11px;color:var(--muted);background:var(--surface3);border:1px solid var(--border);border-radius:8px;cursor:pointer;padding:6px 12px;transition:.15s}
+.stats-grpedit-toggle:hover{color:var(--text)}
+.stats-grpedit-toggle.on{color:var(--text);border-color:var(--accent);font-weight:600}
+
+/* Grupları düzenle paneli */
+.stats-grpedit{background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px}
+.stats-grpedit-head{font-size:11px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.stats-grpedit-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
+.stats-grpedit-row{display:flex;align-items:center;gap:8px}
+.stats-grpedit-input{flex:1;min-width:120px;font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px}
+.stats-grpedit-input:focus{outline:none;border-color:var(--accent)}
+.stats-grpedit-n{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:24px;text-align:right}
+.stats-grpedit-save{font-size:11px;color:#fff;background:var(--accent,#3b82f6);border:1px solid transparent;border-radius:6px;cursor:pointer;padding:6px 12px;font-weight:600;transition:.15s}
+.stats-grpedit-save:hover{filter:brightness(1.08)}
 
 .stats-kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
 .stats-kpi{background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:12px 14px}

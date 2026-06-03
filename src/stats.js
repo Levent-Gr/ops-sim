@@ -15,6 +15,7 @@ let _selectedFolder = null; // drill modunda klasör adı
 let _sortKey = 'date';      // date | name | folder | delta
 let _sortDir = 'desc';
 let _editingId = null;
+let _editGroups = false;    // "Grupları düzenle" paneli açık mı
 
 function destroyStatsChart() {
   if (_statsChart) { try { _statsChart.destroy(); } catch {} _statsChart = null; }
@@ -176,11 +177,29 @@ function paint() {
     </div>`;
   }).join('');
 
+  // Grup düzenleme: tüm gruplar (dönem filtresinden bağımsız), "Grupsuz" hariç.
+  const allGroups = groupByFolder(_allRows).filter(g => g.name !== t('unclassified'));
+  const grpEditPanel = _editGroups ? `
+    <div class="stats-grpedit">
+      <div class="stats-grpedit-head">${t('edit_groups')} <span class="stats-hint">${t('edit_groups_hint')}</span></div>
+      <div class="stats-grpedit-list">
+        ${allGroups.length ? allGroups.map((g, i) => `
+          <div class="stats-grpedit-row">
+            <input class="stats-grpedit-input" id="grpEdit-${i}" value="${safe(g.name)}" data-old="${safe(g.name)}" list="grpEditSuggest"/>
+            <span class="stats-grpedit-n">${g.n}</span>
+            <button class="stats-grpedit-save" data-grpsave="${i}">${t('save')}</button>
+          </div>`).join('') : `<div class="stats-hint">—</div>`}
+      </div>
+      <datalist id="grpEditSuggest">${allGroups.map(g => `<option value="${safe(g.name)}"></option>`).join('')}</datalist>
+    </div>` : '';
+
   el.innerHTML = `
     <div class="stats-filterbar">
       <div class="stats-period">${periodBtns}</div>
+      <button class="stats-grpedit-toggle ${_editGroups ? 'on' : ''}" id="statsGrpEditBtn">${t('edit_groups')}</button>
       ${_selectedFolder ? `<button class="stats-back-btn" id="statsBack">${t('back_to_summary')}</button>` : ''}
     </div>
+    ${grpEditPanel}
 
     <div class="stats-kpi-strip">
       <div class="stats-kpi"><div class="stats-kpi-label">${t('stats_count')}</div><div class="stats-kpi-val">${k.n}</div></div>
@@ -230,6 +249,13 @@ function wireEvents(el, view) {
     paint();
   }));
 
+  // Grupları düzenle (yeniden adlandır / birleştir)
+  el.querySelector('#statsGrpEditBtn')?.addEventListener('click', () => { _editGroups = !_editGroups; paint(); });
+  el.querySelectorAll('[data-grpsave]').forEach(b => b.addEventListener('click', () => saveGroupRename(b.dataset.grpsave)));
+  el.querySelectorAll('.stats-grpedit-input').forEach(i => i.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); saveGroupRename(i.id.replace('grpEdit-', '')); }
+  }));
+
   // Satır içi düzenle / sil / kaydet / iptal
   el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); _editingId = b.dataset.edit; paint(); setTimeout(() => { const i = document.getElementById('statsEdit-' + _editingId); if (i) { i.focus(); i.select(); } }, 0); }));
   el.querySelectorAll('[data-cancel]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); _editingId = null; paint(); }));
@@ -276,6 +302,24 @@ async function deleteActual(id) {
   _allRows = buildRows();
   _editingId = null;
   paint();
+}
+
+// Bir grubu toplu yeniden adlandır. Yeni ad mevcut bir grupla aynıysa → birleşir.
+async function saveGroupRename(idx) {
+  const input = document.getElementById('grpEdit-' + idx);
+  if (!input) return;
+  const oldName = input.dataset.old;
+  const newName = (input.value || '').trim();
+  if (!newName || newName === oldName) return;
+  let changed = 0;
+  for (const rec of (historyStore.histCache || [])) {
+    if (rec.statFolder === oldName) { rec.statFolder = newName; await idbPut(STORES.history, rec); changed++; }
+  }
+  if (changed) {
+    _allRows = buildRows();
+    paint();
+    showToast('✓ ' + t('saved_toast'));
+  }
 }
 
 // ─── Grafik ──────────────────────────────────────────────────────

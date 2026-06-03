@@ -122,7 +122,7 @@ export function renderDeliveries() {
               <div class="grup-chip-v-stats">${c.existingPalet > 0 ? (c.palets + c.existingPalet) + 'p (' + c.palets + '+' + c.existingPalet + ')' : c.palets + 'p'} · ${c.avgPct}%</div>
             </div>
             <button style="background:none;border:1px solid ${chargeRec ? '#f97316' : 'var(--border)'};border-radius:5px;cursor:pointer;padding:5px 11px;font-size:12px;color:${chargeRec ? '#f97316' : 'var(--muted)'};transition:.15s;white-space:nowrap;margin-left:4px" title="Şarj Takibi" onclick="event.stopPropagation();window.__toggleChargePanel('${safe(c.id)}')">⚡</button>
-            <button class="grup-chip-v-remove" style="padding:5px 11px;font-size:12px" onclick="window.__removeFromDeliveryFolder('${safe(folder.id)}','${safe(c.id)}')" title="Klasörden çıkar">✕</button>
+            <button class="grup-chip-v-remove" style="padding:5px 11px;font-size:12px" onclick="window.__removeFromDeliveryFolder('${safe(folder.id)}','${safe(c.id)}')" title="Hattan çıkar">✕</button>
             <button class="grup-chip-v-remove" style="margin-left:2px;padding:5px 11px;font-size:12px" onclick="event.stopPropagation();window.__deleteDelivery('${safe(c.id)}')" title="Teslimatı sil">✕</button>
           </div>
           <div id="charge-panel-${safe(c.id)}" style="display:none;margin:0 0 4px 0">${buildChargePanelHTML(c, chargeRec)}</div>

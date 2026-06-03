@@ -1,5 +1,5 @@
 import { CAT_COLORS, configStore, deliveryStore, historyStore, uiStore } from './state.js';
-import { STORES, idbPut, idbDelete, idbGetAll } from './db.js';
+import { STORES, idbPut, idbGetAll } from './db.js';
 import { t } from './i18n.js';
 import { uid, nowStr, isToday, delay, safe } from './utils.js';
 import { cat, vol, getCatOfPkg } from './config.js';
@@ -228,15 +228,13 @@ export function toggleDetail(i, content) {
 async function loadHistory() {
   try { const all = await idbGetAll(STORES.history); all.sort((a, b) => (b._ts || 0) - (a._ts || 0)); return all; } catch { return []; }
 }
+// Kayıtlar artık SESSİZCE SİLİNMEZ (veri güvenliği). Yalnız çok yüksek bir eşik aşılınca
+// bir kez nazik uyarı için limitHit döner; hiçbir şey silinmez.
+const HIST_WARN_LIMIT = 5000;
 export async function saveHistory(entry) {
   entry._ts = Date.now();
   const all = await loadHistory();
-  let limitHit = false;
-  if (all.length >= 200) {
-    limitHit = true;
-    console.warn('[ops-sim] Geçmiş 200 kayıt sınırına ulaştı; en eski kayıt siliniyor. Veri kaybını önlemek için Ayarlar > Yedekle ile dışa aktarın.');
-    await idbDelete(STORES.history, all[all.length - 1].id);
-  }
+  const limitHit = all.length >= HIST_WARN_LIMIT;
   await idbPut(STORES.history, entry);
   return limitHit;
 }
@@ -246,12 +244,8 @@ async function saveDeliveryEntry(entry) {
   let limitHit = false;
   if (!existing) {
     entry._ts = Date.now();
-    if (deliveryStore.deliveries.length >= 100) {
-      limitHit = true;
-      console.warn('[ops-sim] Teslimat 100 kayıt sınırına ulaştı; en eski kayıt siliniyor. Veri kaybını önlemek için Ayarlar > Yedekle ile dışa aktarın.');
-      const old = deliveryStore.deliveries[deliveryStore.deliveries.length - 1];
-      await idbDelete(STORES.deliveries, old.id);
-    }
+    // Sessiz silme YOK; yalnız çok yüksek eşikte bir kez uyarı.
+    limitHit = deliveryStore.deliveries.length >= HIST_WARN_LIMIT;
     await idbPut(STORES.deliveries, entry);
     deliveryStore.deliveries.unshift(entry);
   }

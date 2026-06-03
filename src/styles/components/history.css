@@ -19,11 +19,21 @@
 .hist-section.open .hist-section-body{grid-template-rows:1fr;opacity:1}
 .hist-section-body-inner{overflow:hidden;min-height:0;padding:0 14px 12px}
 
-.hist-date-group{margin-bottom:12px}
-.hist-date-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.hist-date-label{font-size:10px;font-weight:600;color:var(--muted);font-family:var(--mono);display:flex;align-items:center;gap:5px}
+/* Tarih grubu — belirgin başlık çubuğu + akordeon (bölüm akordeonunun ikizi) */
+.hist-date-group{margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)}
+.hist-date-group:last-child{margin-bottom:0}
+.hist-date-group.open{border-color:var(--border2)}
+.hist-date-header{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;user-select:none;background:var(--surface3);transition:background .15s;outline:none}
+.hist-date-header:hover{background:var(--surface2)}
+.hist-date-header:focus-visible{box-shadow:inset 0 0 0 2px var(--accent,#3b82f6)}
+.hist-date-label{font-size:11px;font-weight:700;color:var(--text);font-family:var(--mono);display:flex;align-items:center;gap:6px;letter-spacing:.5px}
 .hist-date-line{flex:1;height:1px;background:var(--border)}
-.hist-date-count{font-size:10px;color:var(--muted);font-family:var(--mono);opacity:.6}
+.hist-date-count{font-size:10px;color:var(--muted);font-family:var(--mono);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:1px 7px}
+.hist-date-chevron{display:flex;align-items:center;color:var(--muted);transition:transform .3s ease}
+.hist-date-group.open .hist-date-chevron{transform:rotate(90deg);color:var(--text)}
+.hist-date-body{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .35s ease,opacity .35s ease}
+.hist-date-group.open .hist-date-body{grid-template-rows:1fr;opacity:1}
+.hist-date-body-inner{overflow:hidden;min-height:0;padding:8px}
 
 .hist-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .15s;margin-bottom:5px}
 .hist-item:hover{border-color:var(--border2)}

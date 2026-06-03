@@ -5,8 +5,9 @@ Paket/palet simülasyon ve teslimat takip aracı. Saha çalışanları için tas
 ## Özellikler
 
 - **Simülasyon:** Paket kodlarından otomatik palet hesabı, kategori dağılımı, donut/bar grafikleri
-- **Teslimat:** Teslimat kayıtları, klasörler, sürükle-bırak ile organizasyon
-- **Gruplar:** Teslimatları gruplama, not ekleme
+- **Teslimat:** Teslimat kayıtları, hatlar, sürükle-bırak ile organizasyon
+- **Sevkiyatlar:** Teslimatları sevkiyatlara ayırma, not ekleme, arşivleme
+- **Analiz:** Tahmin vs gerçekleşen palet doğruluk analizi (teslimat grubu bazlı)
 - **Şarj sistemi:** Anlık paket sayımı, forecast, kalibrasyon, CSV dışa aktarma
 - **Geçmiş:** Tüm hesaplama geçmişi, detay görüntüleme
 - **Ayarlar:** Paket boyutları/limitleri, palet boyutu, dark/light tema, TR/EN dil desteği

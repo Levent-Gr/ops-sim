@@ -73,6 +73,50 @@ function makeHistSection(headerInnerHTML) {
   return { section, body: inner };
 }
 
+// Bölüm içindeki tarih grubu için akordeon (bölüm akordeonunun ikizi). Aynı bölümde tek
+// tarih açık kalır. headerInnerHTML: tarih etiketi + çizgi + sayaç. Döner: { group, body }.
+function makeDateGroup(headerInnerHTML) {
+  const group = document.createElement('div');
+  group.className = 'hist-date-group';
+
+  const header = document.createElement('div');
+  header.className = 'hist-date-header';
+  header.setAttribute('role', 'button');
+  header.setAttribute('tabindex', '0');
+  header.setAttribute('aria-expanded', 'false');
+  header.innerHTML = headerInnerHTML +
+    `<span class="hist-date-chevron" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></span>`;
+
+  const body = document.createElement('div');
+  body.className = 'hist-date-body';
+  const inner = document.createElement('div');
+  inner.className = 'hist-date-body-inner';
+  body.appendChild(inner);
+
+  group.appendChild(header);
+  group.appendChild(body);
+
+  const toggle = () => {
+    const willOpen = !group.classList.contains('open');
+    const parent = group.parentElement; // bölüm gövdesi
+    if (parent) parent.querySelectorAll(':scope > .hist-date-group.open').forEach(g => {
+      if (g !== group) {
+        g.classList.remove('open');
+        const h = g.querySelector('.hist-date-header');
+        if (h) h.setAttribute('aria-expanded', 'false');
+      }
+    });
+    group.classList.toggle('open', willOpen);
+    header.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  };
+  header.addEventListener('click', toggle);
+  header.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+  });
+
+  return { group, body: inner };
+}
+
 export async function deleteHistItem(id, e) {
   if (e) e.stopPropagation();
   await idbDelete(STORES.history, id);
@@ -110,12 +154,10 @@ export async function renderHistory() {
     const byDate = {};
     tesItems.forEach(h => { const d = (h.date || '').split(' ')[0] || '—'; if (!byDate[d]) byDate[d] = []; byDate[d].push(h); });
     Object.entries(byDate).forEach(([day, items]) => {
-      const dg = document.createElement('div'); dg.className = 'hist-date-group';
-      dg.innerHTML = `<div class="hist-date-header">
+      const { group: dg, body: dgBody } = makeDateGroup(`
         <div class="hist-date-label">${svgIconCalendar('var(--muted)')}${day}</div>
         <div class="hist-date-line"></div>
-        <div class="hist-date-count">${items.length}</div>
-      </div>`;
+        <div class="hist-date-count">${items.length}</div>`);
       items.forEach(h => {
         const grupName = deliveryToGrupName[h.id];
         const div = document.createElement('div'); div.className = 'hist-item';
@@ -133,7 +175,7 @@ export async function renderHistory() {
             <div class="hist-stat">${t('palet_label')}: <span>${h.existingPalet > 0 ? (h.palets + h.existingPalet) + ' (' + h.palets + '+' + h.existingPalet + ')' : h.palets}</span></div>
             <div class="hist-stat">${t('fill_label')}: <span>${h.avgPct}%</span></div>
           </div>`;
-        dg.appendChild(div);
+        dgBody.appendChild(div);
       });
       tesBody.appendChild(dg);
     });
@@ -143,24 +185,22 @@ export async function renderHistory() {
   if (grpItems.length) {
     const { section: grpSec, body: grpBody } = makeHistSection(`
       <div class="hist-section-icon">${svgIconFolder('var(--muted)')}</div>
-      <div class="hist-section-title">${uiStore.currentLang === 'en' ? 'Archived Groups' : 'Arşivlenen Gruplar'}</div>
+      <div class="hist-section-title">${uiStore.currentLang === 'en' ? 'Archived Shipments' : 'Arşivlenen Sevkiyatlar'}</div>
       <div class="hist-section-count">${grpItems.length}</div>`);
 
     const byDate2 = {};
     grpItems.forEach(h => { const d = (h.archivedAt || '').split(' ')[0] || '—'; if (!byDate2[d]) byDate2[d] = []; byDate2[d].push(h); });
     Object.entries(byDate2).forEach(([day, items]) => {
-      const dg = document.createElement('div'); dg.className = 'hist-date-group';
-      dg.innerHTML = `<div class="hist-date-header">
+      const { group: dg, body: dgBody } = makeDateGroup(`
         <div class="hist-date-label">${svgIconCalendar('var(--muted)')}${day}</div>
         <div class="hist-date-line"></div>
-        <div class="hist-date-count">${items.length}</div>
-      </div>`;
+        <div class="hist-date-count">${items.length}</div>`);
       items.forEach(h => {
         const div = document.createElement('div'); div.className = 'hist-item';
         div.ondblclick = () => toggleHistDetail('hd-' + h.id); div.title = 'Çift tıkla → Detay';
         div.innerHTML = `
           <div class="hist-header">
-            <span class="hist-badge hist-badge-grp">GRP</span>
+            <span class="hist-badge hist-badge-grp">SVK</span>
             <div class="hist-name">${safe(h.grupName)}</div>
             <div class="hist-time">${safe((h.archivedAt || '').split(' ')[1] || '')}</div>
             <button class="hist-del" aria-label="${t('delete_grup')}" title="${t('delete_grup')}" onclick="window.__deleteHistItem('${safe(h.id)}',event)">✕</button>
@@ -180,7 +220,7 @@ export async function renderHistory() {
                 </div>`).join('')}
             </div>
           </div>`;
-        dg.appendChild(div);
+        dgBody.appendChild(div);
       });
       grpBody.appendChild(dg);
     });
@@ -195,7 +235,7 @@ export async function renderHistory() {
   if (pastFolders.length) {
     const { section: klsSec, body: klsBody } = makeHistSection(`
       <div class="hist-section-icon">${svgIconFolder('var(--muted)')}</div>
-      <div class="hist-section-title">${uiStore.currentLang === 'en' ? 'Delivery Management Groups' : 'Teslimat Yönetimi Grupları'}</div>
+      <div class="hist-section-title">${uiStore.currentLang === 'en' ? 'Delivery Lines' : 'Teslimat Hatları'}</div>
       <div class="hist-section-count">${pastFolders.length}</div>`);
 
     pastFolders.forEach(folder => {
@@ -205,7 +245,7 @@ export async function renderHistory() {
       const folderDiv = document.createElement('div'); folderDiv.className = 'hist-item'; folderDiv.style.marginBottom = '5px';
       folderDiv.innerHTML = `
         <div class="hist-header" ondblclick="window.__toggleHistDetail('${safe(fid)}')">
-          <span class="hist-badge hist-badge-kls">KLS</span>
+          <span class="hist-badge hist-badge-kls">HAT</span>
           <div class="hist-name">${safe(folder.name)}</div>
           <div class="hist-time">${pastMembers.length} ${uiStore.currentLang === 'en' ? 'past' : 'geçmiş'}</div>
         </div>
@@ -237,12 +277,10 @@ export async function renderHistory() {
     const byDateC = {};
     chaItems.forEach(h => { const d = (h.startedAt || '').split(' ')[0] || '—'; if (!byDateC[d]) byDateC[d] = []; byDateC[d].push(h); });
     Object.entries(byDateC).forEach(([day, items]) => {
-      const dg = document.createElement('div'); dg.className = 'hist-date-group';
-      dg.innerHTML = `<div class="hist-date-header">
+      const { group: dg, body: dgBody } = makeDateGroup(`
         <div class="hist-date-label">${svgIconCalendar('var(--muted)')}${day}</div>
         <div class="hist-date-line"></div>
-        <div class="hist-date-count">${items.length}</div>
-      </div>`;
+        <div class="hist-date-count">${items.length}</div>`);
       items.forEach(h => {
         const totalSent = (h.snapshots || []).reduce((a, s) => a + (s.shipped || 0), 0);
         const lastTotal = h.snapshots?.[h.snapshots.length - 1]?.total || 0;
@@ -260,7 +298,7 @@ export async function renderHistory() {
             <div class="hist-stat">${t('kpi_total_sent')}: <span>${totalSent.toLocaleString('tr-TR')}</span></div>
             <div class="hist-stat">${uiStore.currentLang === 'en' ? 'Records' : 'Veri'}: <span>${(h.snapshots || []).length}</span></div>
           </div>`;
-        dg.appendChild(div);
+        dgBody.appendChild(div);
       });
       chaBody.appendChild(dg);
     });
