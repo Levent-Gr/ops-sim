@@ -5,7 +5,21 @@ import { uid, nowStr, isToday, safe } from './utils.js';
 import { grupIconSVG } from './icons.js';
 import { saveHistory } from './sim.js';
 import { saveDeliveryFolders } from './delivery.js';
+import { getDeliveryChargeInfo } from './charge.js';
 import { confirmDialog } from './dialog.js';
+
+// Bir teslimatın sevkiyata palet katkısı: şarjı varsa "şarj dahil nihai tahmin"
+// (mevcut + sim + gelen + kalan), yoksa sim + mevcut. Şarj verisinden canlı hesaplanır.
+function memberPaletInfo(c) {
+  const ci = getDeliveryChargeInfo(c.id, c);
+  if (ci.hasCharge && ci.finalPalet != null) return { palet: ci.finalPalet, charged: true };
+  return { palet: (c.palets || 0) + (c.existingPalet || 0), charged: false };
+}
+function memberPaletStr(c) {
+  const mp = memberPaletInfo(c);
+  if (mp.charged) return mp.palet + 'p ⚡';
+  return c.existingPalet > 0 ? (c.palets + c.existingPalet) + 'p (' + c.palets + '+' + c.existingPalet + ')' : c.palets + 'p';
+}
 
 export async function loadGrups() {
   try { const g = await idbGet(STORES.config, 'grups'); grupStore.grups = g || []; }
@@ -113,7 +127,7 @@ export function renderGrupTab() {
         <div style="flex:1"><div class="pool-chip-v-name">${safe(c.name)}</div></div>
         <div class="pool-chip-v-meta">
           <div class="pool-chip-v-date">${safe(timeStr)}</div>
-          <div class="pool-chip-v-stats">${c.existingPalet > 0 ? (c.palets + c.existingPalet) + 'p (' + c.palets + '+' + c.existingPalet + ')' : c.palets + 'p'} · ${c.avgPct}%</div>
+          <div class="pool-chip-v-stats">${memberPaletStr(c)} · ${c.avgPct}%</div>
         </div>`;
       chip.addEventListener('dragstart', e => { grupStore.gDragSrc = { tid: c.id }; chip.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
       chip.addEventListener('dragend', () => chip.classList.remove('dragging'));
@@ -168,7 +182,7 @@ export function renderGrupTab() {
                 <div style="flex:1"><div class="grup-chip-v-name">${safe(c.name)}</div></div>
                 <div class="grup-chip-v-meta">
                   <div class="grup-chip-v-date">${safe(timeStr)}</div>
-                  <div class="grup-chip-v-stats">${c.existingPalet > 0 ? (c.palets + c.existingPalet) + 'p (' + c.palets + '+' + c.existingPalet + ')' : c.palets + 'p'} · ${c.avgPct}%</div>
+                  <div class="grup-chip-v-stats">${memberPaletStr(c)} · ${c.avgPct}%</div>
                 </div>
                 <button class="grup-chip-v-remove" aria-label="${t('remove_member')}" title="${t('remove_member')}" onclick="window.__removeFromGrup('${safe(grup.id)}','${safe(c.id)}')">✕</button>
               </div>`;
@@ -177,7 +191,7 @@ export function renderGrupTab() {
         </div>
         ${members.length ? `<div class="grup-stats">
           <div class="grup-stat">${t('members_label')}: <span>${members.length}</span></div>
-          <div class="grup-stat">${t('palet_label')}: <span>${members.reduce((a, c) => a + c.palets, 0)}</span></div>
+          <div class="grup-stat">${t('palet_label')}: <span>${members.reduce((a, c) => a + memberPaletInfo(c).palet, 0)}</span></div>
           <div class="grup-stat">${t('pkg_label')}: <span>${members.reduce((a, c) => a + c.totalPkg, 0)}</span></div>
         </div>` : ''}
       </div>`;

@@ -518,6 +518,7 @@ export async function startCharge(deliveryId) {
   await saveCharge(rec);
   startChargeAlertTimer();
   if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+  if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
   setTimeout(() => drawChargeChart(rec, cpt), 50);
 }
 
@@ -529,6 +530,7 @@ export async function stopCharge(chargeId) {
   await saveCharge(rec);
   await saveChargeToHistory(rec);
   if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+  if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
   try { if (typeof window.__renderHistory === 'function') window.__renderHistory(); } catch {}
 }
 
@@ -608,6 +610,7 @@ export async function addChargeSnapshot(chargeId, total, shipped) {
   rec.snapshots.push({ time: timeStr, tsMs: Date.now(), total: parseInt(total) || 0, shipped: parseInt(shipped) || 0, avgAtTime: curAvg });
   await saveCharge(rec);
   if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+  if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
   renderModalChargeSection(rec.deliveryId);
 }
 
@@ -642,6 +645,7 @@ export async function recalibrateAvg(chargeId) {
   });
   await saveCharge(rec);
   if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+  if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
   renderModalChargeSection(rec.deliveryId);
   const panel = document.getElementById('charge-panel-' + rec.deliveryId);
   if (panel) panel.style.display = 'block';
@@ -680,6 +684,7 @@ export async function saveChargeEndTime(chargeId) {
   rec.chargeEndTime = val;
   await saveCharge(rec);
   if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+  if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
   const panel = document.getElementById('charge-panel-' + rec.deliveryId);
   if (panel) panel.style.display = 'block';
   const cpt = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
@@ -719,6 +724,7 @@ export async function saveEditSnapshot(chargeId, idx) {
   rec.snapshots[idx].shipped = shipped;
   await saveCharge(rec);
   if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+  if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
   const panel = document.getElementById('charge-panel-' + rec.deliveryId);
   if (panel) panel.style.display = 'block';
   const cpt = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
