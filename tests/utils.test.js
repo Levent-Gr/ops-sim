@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { safe, uid, isToday, todayDateStr } from '../src/utils.js';
+import { safe, uid, isToday, todayDateStr, numVal } from '../src/utils.js';
 
 describe('safe() — HTML-escape', () => {
   it('boş/null girdilerde boş string döner', () => {
@@ -40,6 +40,36 @@ describe('uid()', () => {
 describe('todayDateStr()', () => {
   it('gg.aa.yyyy formatında, sıfır dolgulu üretir', () => {
     expect(todayDateStr()).toMatch(/^\d{2}\.\d{2}\.\d{4}$/);
+  });
+});
+
+describe('numVal() — boşluk kırpmalı DOM sayısal okuma', () => {
+  // Sahte HTMLInputElement taklidi — jsdom ortamında DOM gerekmez.
+  const el = (v) => ({ value: v });
+
+  it('normal sayıyı okur', () => {
+    expect(numVal(el('42'))).toBe(42);
+    expect(numVal(el('0'))).toBe(0);
+  });
+
+  it('baştaki/sondaki boşlukları kırparak okur (asıl bug fix)', () => {
+    expect(numVal(el('  5  '))).toBe(5);
+    expect(numVal(el(' 1200'))).toBe(1200);
+    expect(numVal(el('300 '))).toBe(300);
+  });
+
+  it('yalnızca boşluk için NaN döner', () => {
+    expect(numVal(el('   '))).toBeNaN();
+    expect(numVal(el(''))).toBeNaN();
+  });
+
+  it('null/undefined element için NaN döner (element bulunamadıysa güvenli)', () => {
+    expect(numVal(null)).toBeNaN();
+    expect(numVal(undefined)).toBeNaN();
+  });
+
+  it('sayısal olmayan içerik için NaN döner', () => {
+    expect(numVal(el('abc'))).toBeNaN();
   });
 });
 

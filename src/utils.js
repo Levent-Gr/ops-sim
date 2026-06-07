@@ -44,6 +44,15 @@ export function delay(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+// DOM sayısal input yardımcısı — HTMLInputElement (veya null/undefined) alır, değeri
+// önce kırpar (trim) sonra parseInt ile döndürür.
+// Sorun: type="number" inputlara boşluklu değer girildiğinde bazı tarayıcılar "" döndürür
+// (parseInt("") = NaN), bazıları " 5 " döndürür. "limRaw === ''" gibi string karşılaştırmaları
+// da " " boşluğunu yanlış geçirir. Tek kaynak fix — tüm sayısal input okumaları buradan geçmeli.
+export function numVal(el) {
+  return parseInt((el?.value ?? '').trim());
+}
+
 export function downloadJSON(obj, filename) {
   const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');

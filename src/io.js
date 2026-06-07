@@ -2,7 +2,7 @@ import { chargeStore, deliveryStore, grupStore } from './state.js';
 import { STORES, idbGet, idbPut, idbGetAll, idbClear, idbDelete } from './db.js';
 import { t } from './i18n.js';
 import { nowStr, downloadJSON } from './utils.js';
-import { loadConfig, renderPkgCfgList, renderPaletVolUI } from './config.js';
+import { loadConfig, renderPkgCfgList, renderPaletVolUI, PKG_CODE_RE } from './config.js';
 import { loadDeliveries, loadDeliveryFolders, renderDeliveries } from './delivery.js';
 import { loadGrups, renderGrupTab } from './grup.js';
 import { renderRecentCalcs } from './sim.js';
@@ -11,11 +11,16 @@ import { confirmDialog, alertDialog } from './dialog.js';
 
 // Yedek dosyasındaki config bölümünün geçerli yapıda olduğunu doğrular.
 // Geçersiz tip/array durumunda exception atar; çağıran try/catch ile yakalar.
-function _validateConfig(cfg) {
+// GÜVENLİK: Paket kodları (dims/cats/limits anahtarları) onclick gibi JS-string
+// bağlamlarına yazıldığı için PKG_CODE_RE ile doğrulanır — aksi halde tek tırnak
+// içeren kötü niyetli bir yedek/profil stored-XSS oluşturabilir (UI girişindeki
+// kontrolün import yolundaki karşılığı). Test edilebilir olsun diye export edilir.
+export function _validateConfig(cfg) {
   if (!cfg || typeof cfg !== 'object') throw new Error('invalid config block');
   if (cfg.dims) {
     if (typeof cfg.dims !== 'object' || Array.isArray(cfg.dims)) throw new Error('invalid dims');
     for (const [k, v] of Object.entries(cfg.dims)) {
+      if (!PKG_CODE_RE.test(k)) throw new Error(`invalid package code: ${k}`);
       if (!Array.isArray(v) || v.length !== 3 || !v.every(n => Number.isFinite(n) && n > 0)) {
         throw new Error(`invalid dims for ${k}`);
       }
@@ -24,11 +29,19 @@ function _validateConfig(cfg) {
   if (cfg.cats) {
     if (typeof cfg.cats !== 'object' || Array.isArray(cfg.cats)) throw new Error('invalid cats');
     for (const key of ['small', 'mid', 'big']) {
-      if (cfg.cats[key] != null && !Array.isArray(cfg.cats[key])) throw new Error(`invalid cats.${key}`);
+      const arr = cfg.cats[key];
+      if (arr == null) continue;
+      if (!Array.isArray(arr)) throw new Error(`invalid cats.${key}`);
+      for (const code of arr) {
+        if (typeof code !== 'string' || !PKG_CODE_RE.test(code)) throw new Error(`invalid package code: ${code}`);
+      }
     }
   }
-  if (cfg.limits && (typeof cfg.limits !== 'object' || Array.isArray(cfg.limits))) {
-    throw new Error('invalid limits');
+  if (cfg.limits) {
+    if (typeof cfg.limits !== 'object' || Array.isArray(cfg.limits)) throw new Error('invalid limits');
+    for (const k of Object.keys(cfg.limits)) {
+      if (!PKG_CODE_RE.test(k)) throw new Error(`invalid package code: ${k}`);
+    }
   }
   if (cfg.palet && typeof cfg.palet !== 'object') throw new Error('invalid palet');
 }
@@ -76,7 +89,7 @@ export async function importFullBackup(e) {
     if (!Array.isArray(data.deliveries || data.cpts || [])) throw new Error('invalid deliveries');
     if (!Array.isArray(data.history || [])) throw new Error('invalid history');
     if (data.charges != null && !Array.isArray(data.charges)) throw new Error('invalid charges');
-    if (!(await confirmDialog('Overwrite all data?'))) return;
+    if (!(await confirmDialog(t('confirm_overwrite_backup')))) return;
     const cfg = data.config || {};
     await idbPut(STORES.config, cfg.dims || {}, 'dims');
     await idbPut(STORES.config, cfg.cats || { small: [], mid: [], big: [] }, 'cats');
@@ -127,7 +140,7 @@ export async function importProfile(e) {
     const data = JSON.parse(await file.text());
     if (data._type !== 'ops_sim_profile') throw new Error(t('err_invalid_profile'));
     _validateConfig(data.config || {});
-    if (!(await confirmDialog('Update package and pallet settings?'))) return;
+    if (!(await confirmDialog(t('confirm_update_profile')))) return;
     const cfg = data.config || {};
     await idbPut(STORES.config, cfg.dims || {}, 'dims');
     await idbPut(STORES.config, cfg.cats || { small: [], mid: [], big: [] }, 'cats');
@@ -155,7 +168,7 @@ export async function clearAllData() {
   ]);
   await loadConfig();
   deliveryStore.deliveries = []; grupStore.grups = []; deliveryStore.deliveryFolders = []; chargeStore.chargeCache = [];
-  await alertDialog('Done.');
+  await alertDialog(t('alert_done'));
 }
 
 export async function clearDeliveriesData() {

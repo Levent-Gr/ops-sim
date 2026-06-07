@@ -103,7 +103,22 @@ export const I18N = {
     recalib_apply: 'Hesapla ve Uygula',
     recalib_no_pkg: 'Lütfen paket girişi yapın.',
     recalib_no_palet: 'Lütfen geçerli bir palet sayısı girin.',
-    recalib_failed: 'Kalibrasyon başarısız. Paket kodlarını kontrol edin.'
+    recalib_failed: 'Kalibrasyon başarısız. Paket kodlarını kontrol edin.',
+    // Şarj alarm modalı
+    charge_alert_time_label: 'Saat',
+    charge_alert_sub_msg: '— Lütfen güncel total paket sayısını girin',
+    last_update: 'Son güncelleme',
+    // Chart.js
+    chart_forecast_dataset: 'Tahmini palet',
+    chart_forecast_tooltip_prefix: 'Tahmin',
+    // Diyaloglar
+    confirm_overwrite_backup: 'Mevcut tüm verinin üzerine yazılacak. Devam et?',
+    confirm_update_profile: 'Paket ve palet ayarları güncellenecek. Devam et?',
+    alert_done: 'Tamamlandı.',
+    toast_reset: 'Sıfırlandı.',
+    // Zaman birimleri
+    unit_min: 'dk',
+    unit_per_min: '/dk'
   },
   en: {
     dlg_ok: 'OK', dlg_cancel: 'Cancel',
@@ -207,7 +222,22 @@ export const I18N = {
     recalib_apply: 'Calculate & Apply',
     recalib_no_pkg: 'Please enter packages.',
     recalib_no_palet: 'Please enter a valid pallet count.',
-    recalib_failed: 'Calibration failed. Check package codes.'
+    recalib_failed: 'Calibration failed. Check package codes.',
+    // Charge alert modal
+    charge_alert_time_label: 'Time',
+    charge_alert_sub_msg: '— Please enter current total package count',
+    last_update: 'Last update',
+    // Chart.js
+    chart_forecast_dataset: 'Forecast pallets',
+    chart_forecast_tooltip_prefix: 'Forecast',
+    // Dialogs
+    confirm_overwrite_backup: 'This will overwrite all current data. Continue?',
+    confirm_update_profile: 'Package and pallet settings will be updated. Continue?',
+    alert_done: 'Done.',
+    toast_reset: 'Reset.',
+    // Time units
+    unit_min: 'min',
+    unit_per_min: '/min'
   }
 };
 

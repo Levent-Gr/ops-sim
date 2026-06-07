@@ -1,8 +1,13 @@
 import { configStore, uiStore } from './state.js';
 import { STORES, idbGet, idbPut, idbDelete } from './db.js';
 import { t } from './i18n.js';
-import { safe } from './utils.js';
+import { safe, numVal } from './utils.js';
 import { confirmDialog } from './dialog.js';
+
+// Paket kodu için izin verilen karakterler — A-Z, 0-9, _ ve -.
+// Tek kaynak: hem UI girişi (addNewPackage) hem import doğrulaması (io.js _validateConfig)
+// bunu kullanır. XSS payload'larını ve bozuk DOM ID'lerini kaynakta engeller (defense in depth).
+export const PKG_CODE_RE = /^[A-Z0-9_-]+$/;
 
 export function rebuildDerived() {
   configStore.ALL_ORDER = [
@@ -78,9 +83,9 @@ export async function renderPaletVolUI() {
 }
 
 export function updateSvResult() {
-  const l = parseInt(document.getElementById('svLen').value) || 0;
-  const w = parseInt(document.getElementById('svWid').value) || 0;
-  const h = parseInt(document.getElementById('svHgt').value) || 0;
+  const l = numVal(document.getElementById('svLen')) || 0;
+  const w = numVal(document.getElementById('svWid')) || 0;
+  const h = numVal(document.getElementById('svHgt')) || 0;
   const v = l * w * h;
   document.getElementById('svResult').textContent = v > 0
     ? (v / 1e9).toFixed(4) + ' m³ (' + l + '×' + w + '×' + h + ' mm)'
@@ -88,9 +93,9 @@ export function updateSvResult() {
 }
 
 export async function savePaletVol() {
-  const l = parseInt(document.getElementById('svLen').value) || 0;
-  const w = parseInt(document.getElementById('svWid').value) || 0;
-  const h = parseInt(document.getElementById('svHgt').value) || 0;
+  const l = numVal(document.getElementById('svLen')) || 0;
+  const w = numVal(document.getElementById('svWid')) || 0;
+  const h = numVal(document.getElementById('svHgt')) || 0;
   const toast = document.getElementById('svToast');
   if (l <= 0 || w <= 0 || h <= 0) {
     toast.textContent = '⚠ ' + t('palet_vol_desc');
@@ -112,7 +117,7 @@ export async function resetPaletVol() {
   ['svLen', 'svWid', 'svHgt'].forEach(id => document.getElementById(id).value = '');
   updateSvResult();
   const toast = document.getElementById('svToast');
-  toast.textContent = '✓ Reset.';
+  toast.textContent = '✓ ' + t('toast_reset');
   toast.className = 'cfg-toast show';
   setTimeout(() => toast.classList.remove('show'), 2000);
 }
@@ -163,10 +168,10 @@ export function markPkgChanged(code) {
 }
 
 export function savePkgEdit(code) {
-  const l = parseInt(document.getElementById('pe-l-' + code).value) || 0;
-  const w = parseInt(document.getElementById('pe-w-' + code).value) || 0;
-  const h = parseInt(document.getElementById('pe-h-' + code).value) || 0;
-  const limRaw = document.getElementById('pe-lim-' + code).value;
+  const l = numVal(document.getElementById('pe-l-' + code)) || 0;
+  const w = numVal(document.getElementById('pe-w-' + code)) || 0;
+  const h = numVal(document.getElementById('pe-h-' + code)) || 0;
+  const limRaw = (document.getElementById('pe-lim-' + code)?.value ?? '').trim();
   const limVal = limRaw === '' ? undefined : parseInt(limRaw);
   const catKey = document.getElementById('pe-cat-' + code).value;
   const toast = document.getElementById('pkgEditToast');
@@ -205,18 +210,18 @@ export async function deletePkg(code) {
 
 export function addNewPackage() {
   const codeRaw = document.getElementById('newPkgCode').value.trim().toUpperCase();
-  const l = parseInt(document.getElementById('newPkgL').value) || 0;
-  const w = parseInt(document.getElementById('newPkgW').value) || 0;
-  const h = parseInt(document.getElementById('newPkgH').value) || 0;
-  const limRaw = document.getElementById('newPkgLim').value;
+  const l = numVal(document.getElementById('newPkgL')) || 0;
+  const w = numVal(document.getElementById('newPkgW')) || 0;
+  const h = numVal(document.getElementById('newPkgH')) || 0;
+  const limRaw = (document.getElementById('newPkgLim')?.value ?? '').trim();
   const limVal = limRaw === '' ? undefined : parseInt(limRaw);
   const catKey = document.getElementById('newPkgCat').value;
   const toast = document.getElementById('addPkgToast');
   let err = '';
   if (!codeRaw) err = '⚠ ' + t('err_code_required');
-  // Sadece A-Z, 0-9, _ ve - karakterlerine izin ver — XSS payload'larını ve
-  // bozuk DOM ID'lerini kaynak noktasında engelle (defense in depth).
-  else if (!/^[A-Z0-9_-]+$/.test(codeRaw)) err = `⚠ "${safe(codeRaw)}" — geçersiz karakter`;
+  // Sadece A-Z, 0-9, _ ve - karakterlerine izin ver (PKG_CODE_RE) — XSS payload'larını
+  // ve bozuk DOM ID'lerini kaynak noktasında engelle (defense in depth).
+  else if (!PKG_CODE_RE.test(codeRaw)) err = `⚠ "${safe(codeRaw)}" — geçersiz karakter`;
   else if (configStore.DIMS[codeRaw]) err = `⚠ "${safe(codeRaw)}" ` + t('err_code_exists');
   else if (l <= 0 || w <= 0 || h <= 0) err = '⚠ ' + t('err_invalid_dim');
   if (err) {

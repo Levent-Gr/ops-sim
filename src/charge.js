@@ -2,7 +2,7 @@ import Chart from 'chart.js/auto';
 import { chargeStore, deliveryStore, historyStore, uiStore } from './state.js';
 import { STORES, idbGetAll, idbPut } from './db.js';
 import { t } from './i18n.js';
-import { uid, nowStr, safe } from './utils.js';
+import { uid, nowStr, safe, numVal } from './utils.js';
 import { simulatePacking } from './sim.js';
 import { alertDialog } from './dialog.js';
 import {
@@ -89,7 +89,7 @@ export function calcAvgRateFromStart(rec, untilIdx) {
   return Math.max(0, totalIncoming / dtMin);
 }
 
-export function calcForecastAtIndex(rec, cpt, idx) {
+export function calcForecastAtIndex(rec, delivery, idx) {
   const snaps = rec.snapshots;
   if (idx < 1 || idx >= snaps.length) return null;
   const ratePerMin = calcAvgRateFromStart(rec, idx);
@@ -111,7 +111,7 @@ export function calcRateFromSnapshots(prev, curr) {
   return Math.max(0, realIncoming / dt);
 }
 
-export function calcForecast(rec, cpt) {
+export function calcForecast(rec, delivery) {
   if (rec.snapshots.length < 2) return null;
   const lastIdx = rec.snapshots.length - 1;
   const ratePerMin = calcAvgRateFromStart(rec, lastIdx);
@@ -125,11 +125,11 @@ export function calcForecast(rec, cpt) {
   return { extraPkg, extraPalet, ratePerMin: Math.round(ratePerMin * 10) / 10, remainMin: Math.round(remainMin), avgPkgPerPalet: ppp };
 }
 
-export function calcCurrentStatus(rec, cpt) {
-  const existingPalet = cpt.existingPalet || 0;
-  const simPalet = cpt.palets || 0;
+export function calcCurrentStatus(rec, delivery) {
+  const existingPalet = delivery.existingPalet || 0;
+  const simPalet = delivery.palets || 0;
   const arrived = calcShippedSoFar(rec);
-  const fc = calcForecast(rec, cpt);
+  const fc = calcForecast(rec, delivery);
   const remainingPkg = fc ? fc.extraPkg : 0;
   const remainingPalet = fc ? fc.extraPalet : 0;
   const finalPalet = existingPalet + simPalet + arrived.palet + remainingPalet;
@@ -234,30 +234,30 @@ function buildChargeEndTimeHTML(rec) {
     `<button type="button" class="btn-edit-endtime" title="${t('edit_endtime')}" aria-label="${t('edit_endtime')}" onclick="window.__startEditEndTime('${rec.id}')">✎</button>`;
 }
 
-export function buildChargePanelHTML(cpt, chargeRec) {
-  const ppp = cpt.avgPkgPerPalet || Math.round(cpt.totalPkg / Math.max(1, cpt.palets)) || 150;
+export function buildChargePanelHTML(delivery, chargeRec) {
+  const ppp = delivery.avgPkgPerPalet || Math.round(delivery.totalPkg / Math.max(1, delivery.palets)) || 150;
   if (!chargeRec) {
     return `<div class="charge-panel">
       <div class="charge-panel-title">${ICON_BOLT} ${t('charge_tracking')}</div>
       <div class="charge-row">
         <span class="charge-label">${t('charge_end_label')}</span>
-        <input class="charge-input" type="time" id="cend-${cpt.id}" value="13:30"/>
+        <input class="charge-input" type="time" id="cend-${delivery.id}" value="13:30"/>
       </div>
       <div class="charge-row">
         <span class="charge-label">${t('charge_now_total')}</span>
-        <input class="charge-input" type="number" min="0" id="ctotal-${cpt.id}" placeholder="1200"/>
+        <input class="charge-input" type="number" min="0" id="ctotal-${delivery.id}" placeholder="1200"/>
       </div>
       <div style="font-size:10px;color:var(--muted);margin-bottom:10px;padding:6px 10px;background:var(--surface3);border-radius:6px;border:1px solid var(--border)">
         ${t('avg_pkg_per_palet')}: <b style="color:var(--text)">${ppp}</b> <span style="opacity:.7">${t('auto_from_sim')}</span>
       </div>
       <div>
-        <button class="btn-charge-start" onclick="window.__startCharge('${cpt.id}')">${ICON_BOLT} ${t('charge_start_btn')}</button>
+        <button class="btn-charge-start" onclick="window.__startCharge('${delivery.id}')">${ICON_BOLT} ${t('charge_start_btn')}</button>
       </div>
     </div>`;
   }
-  const status = calcCurrentStatus(chargeRec, cpt);
-  const forecast = calcForecast(chargeRec, cpt);
-  const historyHTML = buildForecastHistoryHTML(chargeRec, cpt);
+  const status = calcCurrentStatus(chargeRec, delivery);
+  const forecast = calcForecast(chargeRec, delivery);
+  const historyHTML = buildForecastHistoryHTML(chargeRec, delivery);
   const chartId = 'chargeChart-' + chargeRec.id;
   return `<div class="charge-panel">
     <div class="charge-panel-title" style="display:flex;justify-content:space-between;align-items:center">
@@ -267,17 +267,17 @@ export function buildChargePanelHTML(cpt, chargeRec) {
 
     ${renderStatusHTML(status)}
 
-    ${forecast ? renderForecastHTML(forecast, cpt) : '<div style="font-size:11px;color:var(--muted);margin:10px 0">' + t('min_2_data') + '</div>'}
+    ${forecast ? renderForecastHTML(forecast, delivery) : '<div style="font-size:11px;color:var(--muted);margin:10px 0">' + t('min_2_data') + '</div>'}
 
     <div class="ed-chart-header">
       <div>
         <div class="ed-chart-title">${ICON_TREND} ${t('trend_analysis')}</div>
         <div class="ed-chart-sub">${chargeRec.snapshots.length} ${t('trend_sub')}</div>
       </div>
-      ${buildEditorialHeadRight(chargeRec, cpt)}
+      ${buildEditorialHeadRight(chargeRec, delivery)}
     </div>
     <div class="charge-chart-wrap-palet"><canvas id="${chartId}-palet"></canvas></div>
-    ${buildKpiStrip(chargeRec, cpt)}
+    ${buildKpiStrip(chargeRec, delivery)}
     ${buildPaketGaugeHTML(chargeRec, true)}
 
     <div class="ed-section-title">${ICON_LIST} ${t('forecast_hist')}</div>
@@ -300,25 +300,25 @@ export function buildChargePanelHTML(cpt, chargeRec) {
   </div>`;
 }
 
-export function buildEditorialHeadRight(rec, cpt) {
+export function buildEditorialHeadRight(rec, delivery) {
   const snaps = rec.snapshots;
   if (snaps.length === 0) return '';
   const idx = snaps.length - 1;
   let finalPalet, deltaTxt = '';
   if (idx === 0) {
-    finalPalet = (cpt.existingPalet || 0) + (cpt.palets || 0);
+    finalPalet = (delivery.existingPalet || 0) + (delivery.palets || 0);
     deltaTxt = `<span class="ed-delta-flat">${t('first_data_only')}</span>`;
   } else {
-    const fc = calcForecastAtIndex(rec, cpt, idx);
+    const fc = calcForecastAtIndex(rec, delivery, idx);
     const arrived = calcShippedSoFar(rec);
-    finalPalet = (cpt.existingPalet || 0) + (cpt.palets || 0) + arrived.palet + (fc ? fc.extraPalet : 0);
+    finalPalet = (delivery.existingPalet || 0) + (delivery.palets || 0) + arrived.palet + (fc ? fc.extraPalet : 0);
     if (idx === 1) {
       deltaTxt = `<span class="ed-delta-flat">${t('first_forecast')}</span>`;
     } else {
-      const fcPrev = calcForecastAtIndex(rec, cpt, idx - 1);
+      const fcPrev = calcForecastAtIndex(rec, delivery, idx - 1);
       if (fcPrev && fc) {
         const arrivedPrev = calcShippedSoFar({ ...rec, snapshots: snaps.slice(0, idx), avgPkgPerPalet: rec.avgPkgPerPalet });
-        const prevFinal = (cpt.existingPalet || 0) + (cpt.palets || 0) + arrivedPrev.palet + fcPrev.extraPalet;
+        const prevFinal = (delivery.existingPalet || 0) + (delivery.palets || 0) + arrivedPrev.palet + fcPrev.extraPalet;
         const diff = finalPalet - prevFinal;
         if (diff > 0) deltaTxt = `<span class="ed-delta-up">+${diff} ${t('last_data_inc')}</span>`;
         else if (diff < 0) deltaTxt = `<span class="ed-delta-down">${diff} ${t('last_data_dec')}</span>`;
@@ -332,7 +332,7 @@ export function buildEditorialHeadRight(rec, cpt) {
   </div>`;
 }
 
-export function buildKpiStrip(rec, cpt) {
+export function buildKpiStrip(rec, delivery) {
   const lastTotal = rec.snapshots[rec.snapshots.length - 1]?.total || 0;
   const totalSent = rec.snapshots.reduce((a, s) => a + (s.shipped || 0), 0);
   const totalWithSent = lastTotal + totalSent;
@@ -458,14 +458,14 @@ export function renderStatusHTML(s) {
   </div>`;
 }
 
-export function buildForecastHistoryHTML(rec, cpt) {
+export function buildForecastHistoryHTML(rec, delivery) {
   const snaps = rec.snapshots;
   if (snaps.length < 2) return `<div style="font-size:11px;color:var(--muted);padding:8px;background:var(--surface3);border-radius:6px;border:1px solid var(--border)">${t('min_2_data')}</div>`;
   const rows = [];
   for (let i = 1; i < snaps.length; i++) {
-    const fc = calcForecastAtIndex(rec, cpt, i);
+    const fc = calcForecastAtIndex(rec, delivery, i);
     if (!fc) continue;
-    const prevFc = i >= 2 ? calcForecastAtIndex(rec, cpt, i - 1) : null;
+    const prevFc = i >= 2 ? calcForecastAtIndex(rec, delivery, i - 1) : null;
     let trend = '';
     if (prevFc) {
       const diff = fc.extraPkg - prevFc.extraPkg;
@@ -476,22 +476,22 @@ export function buildForecastHistoryHTML(rec, cpt) {
     rows.push(`<div class="charge-fhist-row">
       <span class="charge-fhist-time">${snaps[i].time}</span>
       <span class="charge-fhist-range">${snaps[0].time}→${snaps[i].time}</span>
-      <span class="charge-fhist-rate">${fc.ratePerMin}/dk</span>
+      <span class="charge-fhist-rate">${fc.ratePerMin}${t('unit_per_min')}</span>
       <span class="charge-fhist-extra">+${fc.extraPkg} pkt / <b>+${fc.extraPalet} plt</b> ${trend}</span>
     </div>`);
   }
   return `<div class="charge-fhist-list">${rows.join('')}</div>`;
 }
 
-export function renderForecastHTML(f, cpt) {
+export function renderForecastHTML(f, delivery) {
   return `<div class="charge-forecast">
     <div class="charge-forecast-title">
       ${ICON_STATUS}
       ${t('instant_forecast')}
     </div>
     <div class="charge-kpi-row">
-      <div class="charge-kpi"><div class="charge-kpi-label">${t('remain_time')}</div><div class="charge-kpi-val">${f.remainMin}<span style="font-size:10px;color:var(--muted)">dk</span></div></div>
-      <div class="charge-kpi"><div class="charge-kpi-label">${t('rate_label')}</div><div class="charge-kpi-val">${f.ratePerMin}<span style="font-size:10px;color:var(--muted)">/dk</span></div></div>
+      <div class="charge-kpi"><div class="charge-kpi-label">${t('remain_time')}</div><div class="charge-kpi-val">${f.remainMin}<span style="font-size:10px;color:var(--muted)">${t('unit_min')}</span></div></div>
+      <div class="charge-kpi"><div class="charge-kpi-label">${t('rate_label')}</div><div class="charge-kpi-val">${f.ratePerMin}<span style="font-size:10px;color:var(--muted)">${t('unit_per_min')}</span></div></div>
       <div class="charge-kpi"><div class="charge-kpi-label">${t('avg_label')}</div><div class="charge-kpi-val">${f.avgPkgPerPalet}<span style="font-size:10px;color:var(--muted)">${t('pkg_per_palet_short')}</span></div></div>
     </div>
   </div>`;
@@ -499,27 +499,27 @@ export function renderForecastHTML(f, cpt) {
 
 // ─── Şarj operasyonları ──────────────────────────────────────────
 export async function startCharge(deliveryId) {
-  const cpt = deliveryStore.deliveries.find(c => c.id === deliveryId); if (!cpt) return;
+  const delivery = deliveryStore.deliveries.find(c => c.id === deliveryId); if (!delivery) return;
   const endTime = document.getElementById('cend-' + deliveryId)?.value || '13:30';
-  const totalRaw = parseInt(document.getElementById('ctotal-' + deliveryId)?.value);
-  const ppp = cpt.avgPkgPerPalet || Math.round(cpt.totalPkg / Math.max(1, cpt.palets)) || 150;
+  const totalRaw = numVal(document.getElementById('ctotal-' + deliveryId));
+  const ppp = delivery.avgPkgPerPalet || Math.round(delivery.totalPkg / Math.max(1, delivery.palets)) || 150;
   if (isNaN(totalRaw) || totalRaw < 0) { await alertDialog(t('valid_total_required')); return; }
   const now = new Date();
   const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
   const rec = {
-    id: uid(), deliveryId, deliveryName: cpt.name, chargeEndTime: endTime, avgPkgPerPalet: ppp, active: true,
+    id: uid(), deliveryId, deliveryName: delivery.name, chargeEndTime: endTime, avgPkgPerPalet: ppp, active: true,
     startedAt: nowStr(), startedAtMs: Date.now(),
     snapshots: [{ time: timeStr, tsMs: Date.now(), total: totalRaw, shipped: 0, avgAtTime: ppp }],
     calibrations: [{
       time: timeStr, tsMs: Date.now(), avgPkgPerPalet: ppp, source: 'sim',
-      pkgCount: cpt.totalPkg || 0, paletCount: cpt.palets || 0, existingPalet: cpt.existingPalet || 0
+      pkgCount: delivery.totalPkg || 0, paletCount: delivery.palets || 0, existingPalet: delivery.existingPalet || 0
     }]
   };
   await saveCharge(rec);
   startChargeAlertTimer();
   if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
   if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
-  setTimeout(() => drawChargeChart(rec, cpt), 50);
+  setTimeout(() => drawChargeChart(rec, delivery), 50);
 }
 
 export async function stopCharge(chargeId) {
@@ -597,8 +597,8 @@ export function toggleChargePanel(deliveryId) {
   if (!isOpen) {
     panel.style.display = 'block';
     const rec = chargeStore.chargeCache.find(c => c.deliveryId === deliveryId && c.active);
-    const cpt = deliveryStore.deliveries.find(c => c.id === deliveryId);
-    if (rec && cpt) setTimeout(() => drawChargeChart(rec, cpt), 50);
+    const delivery = deliveryStore.deliveries.find(c => c.id === deliveryId);
+    if (rec && delivery) setTimeout(() => drawChargeChart(rec, delivery), 50);
   }
 }
 
@@ -620,7 +620,7 @@ export async function recalibrateAvg(chargeId) {
   const paletEl = document.getElementById('recalibPalet-' + chargeId);
   if (!pkgEl || !paletEl) return;
   const pkgRaw = (pkgEl.value || '').trim();
-  const paletCountUser = parseInt(paletEl.value);
+  const paletCountUser = numVal(paletEl);
   if (!pkgRaw) { await alertDialog(t('recalib_no_pkg')); return; }
   if (isNaN(paletCountUser) || paletCountUser <= 0) { await alertDialog(t('recalib_no_palet')); return; }
   const packages = pkgRaw.split('\n').map(s => s.trim()).filter(Boolean);
@@ -649,8 +649,8 @@ export async function recalibrateAvg(chargeId) {
   renderModalChargeSection(rec.deliveryId);
   const panel = document.getElementById('charge-panel-' + rec.deliveryId);
   if (panel) panel.style.display = 'block';
-  const cpt = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
-  if (cpt) setTimeout(() => drawChargeChart(rec, cpt), 50);
+  const delivery = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
+  if (delivery) setTimeout(() => drawChargeChart(rec, delivery), 50);
 }
 
 // ─── Bitiş saati düzenleme (yalnız aktif şarj) ───────────────────
@@ -687,8 +687,8 @@ export async function saveChargeEndTime(chargeId) {
   if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
   const panel = document.getElementById('charge-panel-' + rec.deliveryId);
   if (panel) panel.style.display = 'block';
-  const cpt = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
-  if (cpt) setTimeout(() => drawChargeChart(rec, cpt), 50);
+  const delivery = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
+  if (delivery) setTimeout(() => drawChargeChart(rec, delivery), 50);
   renderModalChargeSection(rec.deliveryId);
 }
 
@@ -716,9 +716,9 @@ export async function saveEditSnapshot(chargeId, idx) {
   if (!rec.snapshots || !rec.snapshots[idx]) return;
   const ti = document.getElementById('pktEditTotal-' + chargeId + '-' + idx);
   const si = document.getElementById('pktEditShipped-' + chargeId + '-' + idx);
-  const total = parseInt(ti?.value);
+  const total = numVal(ti);
   if (isNaN(total) || total < 0) { await alertDialog(t('valid_total_required')); return; }
-  let shipped = parseInt(si?.value);
+  let shipped = numVal(si);
   if (isNaN(shipped) || shipped < 0) shipped = 0;
   rec.snapshots[idx].total = total;
   rec.snapshots[idx].shipped = shipped;
@@ -727,8 +727,8 @@ export async function saveEditSnapshot(chargeId, idx) {
   if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
   const panel = document.getElementById('charge-panel-' + rec.deliveryId);
   if (panel) panel.style.display = 'block';
-  const cpt = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
-  if (cpt) setTimeout(() => drawChargeChart(rec, cpt), 50);
+  const delivery = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
+  if (delivery) setTimeout(() => drawChargeChart(rec, delivery), 50);
   renderModalChargeSection(rec.deliveryId);
 }
 
@@ -741,16 +741,16 @@ export function toggleRecalibForm(chargeId) {
 export async function manualAddSnapshot(chargeId) {
   const totalEl = document.getElementById('mtotal-' + chargeId);
   const shippedEl = document.getElementById('mshipped-' + chargeId);
-  const total = parseInt(totalEl?.value);
-  const shipped = parseInt(shippedEl?.value) || 0;
+  const total = numVal(totalEl);
+  const shipped = numVal(shippedEl) || 0;
   if (isNaN(total) || total < 0) { await alertDialog(t('valid_total_required')); return; }
   await addChargeSnapshot(chargeId, total, shipped);
   const rec = chargeStore.chargeCache.find(c => c.id === chargeId);
   if (rec) {
     const panel = document.getElementById('charge-panel-' + rec.deliveryId);
     if (panel) panel.style.display = 'block';
-    const cpt = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
-    if (cpt) setTimeout(() => drawChargeChart(rec, cpt), 50);
+    const delivery = deliveryStore.deliveries.find(c => c.id === rec.deliveryId);
+    if (delivery) setTimeout(() => drawChargeChart(rec, delivery), 50);
   }
 }
 
@@ -766,7 +766,7 @@ export function destroyChargeCharts() {
   }
 }
 
-export function drawChargeChart(rec, cpt, canvasId) {
+export function drawChargeChart(rec, delivery, canvasId) {
   const baseId = canvasId || ('chargeChart-' + rec.id);
   const paletId = baseId + '-palet';
   const paketId = baseId + '-paket';
@@ -780,10 +780,10 @@ export function drawChargeChart(rec, cpt, canvasId) {
   const snaps = rec.snapshots;
   const labels = snaps.map(s => s.time);
   const paletData = snaps.map((s, i) => {
-    if (i === 0) return (cpt.existingPalet || 0) + (cpt.palets || 0);
-    const fc = calcForecastAtIndex(rec, cpt, i);
+    if (i === 0) return (delivery.existingPalet || 0) + (delivery.palets || 0);
+    const fc = calcForecastAtIndex(rec, delivery, i);
     const arrived = calcShippedSoFar({ ...rec, snapshots: snaps.slice(0, i + 1), avgPkgPerPalet: rec.avgPkgPerPalet });
-    return (cpt.existingPalet || 0) + (cpt.palets || 0) + arrived.palet + (fc ? fc.extraPalet : 0);
+    return (delivery.existingPalet || 0) + (delivery.palets || 0) + arrived.palet + (fc ? fc.extraPalet : 0);
   });
 
   // body üzerindeki theme-dark sınıfı tema durumunu belirler
@@ -808,7 +808,7 @@ export function drawChargeChart(rec, cpt, canvasId) {
     data: {
       labels,
       datasets: [{
-        label: 'Tahmini palet',
+        label: t('chart_forecast_dataset'),
         data: paletData,
         borderColor: paletColor,
         backgroundColor: paletBg,
@@ -832,7 +832,7 @@ export function drawChargeChart(rec, cpt, canvasId) {
           titleColor: dark ? '#fff' : '#000',
           bodyColor: dark ? '#d1d5db' : '#374151',
           borderColor: gridColor, borderWidth: 1,
-          callbacks: { label: ctx => 'Tahmin: ' + ctx.parsed.y + ' palet' }
+          callbacks: { label: ctx => t('chart_forecast_tooltip_prefix') + ': ' + ctx.parsed.y + ' ' + t('palet_label').toLowerCase() }
         }
       },
       scales: {
@@ -910,22 +910,22 @@ function showChargeAlert(charges) {
   const itemsEl = document.getElementById('chargeAlertItems');
   const now = new Date();
   const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-  document.getElementById('chargeAlertSub').textContent = `Saat ${timeStr} — Lütfen güncel total paket sayısını girin`;
+  document.getElementById('chargeAlertSub').textContent = `${t('charge_alert_time_label')} ${timeStr} ${t('charge_alert_sub_msg')}`;
 
   itemsEl.innerHTML = charges.map(c => `
     <div class="charge-alert-item">
       <div class="charge-alert-item-name">${safe(c.deliveryName)}</div>
-      <div class="charge-alert-item-time">Şarj bitiş: ${safe(c.chargeEndTime)} · Son güncelleme: ${safe(c.snapshots[c.snapshots.length - 1]?.time || '—')}</div>
+      <div class="charge-alert-item-time">${t('charge_end_label')}: ${safe(c.chargeEndTime)} · ${t('last_update')}: ${safe(c.snapshots[c.snapshots.length - 1]?.time || '—')}</div>
       <div class="charge-alert-fields">
         <div class="charge-alert-field">
-          <div class="charge-alert-field-label">Total Paket</div>
-          <input class="charge-alert-inp" type="number" min="0" id="alert-total-${safe(c.id)}" placeholder="Örn: 1400"/>
+          <div class="charge-alert-field-label">${t('data_total')}</div>
+          <input class="charge-alert-inp" type="number" min="0" id="alert-total-${safe(c.id)}" placeholder="1400"/>
         </div>
         <div class="charge-alert-field">
-          <div class="charge-alert-field-label">Gönderilen (isteğe bağlı)</div>
+          <div class="charge-alert-field-label">${t('data_sent')}</div>
           <input class="charge-alert-inp" type="number" min="0" id="alert-shipped-${safe(c.id)}" placeholder="0"/>
         </div>
-        <button class="charge-alert-item-save" onclick="window.__saveAlertSnapshot('${safe(c.id)}')">Kaydet</button>
+        <button class="charge-alert-item-save" onclick="window.__saveAlertSnapshot('${safe(c.id)}')">${t('save')}</button>
       </div>
     </div>`).join('');
 
@@ -936,9 +936,9 @@ function showChargeAlert(charges) {
 export async function saveAlertSnapshot(chargeId) {
   const totalEl = document.getElementById('alert-total-' + chargeId);
   const shippedEl = document.getElementById('alert-shipped-' + chargeId);
-  const total = parseInt(totalEl?.value);
+  const total = numVal(totalEl);
   if (isNaN(total) || total < 0) { totalEl.style.borderColor = 'rgba(248,113,113,.5)'; return; }
-  const shipped = parseInt(shippedEl?.value) || 0;
+  const shipped = numVal(shippedEl) || 0;
   await addChargeSnapshot(chargeId, total, shipped);
   const item = totalEl.closest('.charge-alert-item');
   if (item) { item.style.opacity = '.4'; item.style.pointerEvents = 'none'; }
@@ -975,14 +975,14 @@ export function renderModalChargeSection(deliveryId, deliveryObj) {
   // Aktif şarjı id VEYA isim(+gün) ile bul (Geçmiş'ten açınca TES id'si eşleşmez).
   const chargeRec = findActiveChargeForDelivery(deliveryId, deliveryObj);
   if (!chargeRec) { renderModalPastCharge(deliveryId, sec, deliveryObj); return; }
-  // cpt: önce şarjın kendi teslimat kaydı, sonra geçilen id, sonra modal objesi.
-  const cpt = deliveryStore.deliveries.find(c => c.id === chargeRec.deliveryId)
+  // Önce şarjın kendi teslimat kaydı, sonra geçilen id, sonra modal objesi.
+  const delivery = deliveryStore.deliveries.find(c => c.id === chargeRec.deliveryId)
     || deliveryStore.deliveries.find(c => c.id === deliveryId)
     || deliveryObj
     || { id: deliveryId, name: chargeRec.deliveryName, palets: 0, existingPalet: 0, totalPkg: 0, avgPkgPerPalet: chargeRec.avgPkgPerPalet };
-  const status = calcCurrentStatus(chargeRec, cpt);
-  const forecast = calcForecast(chargeRec, cpt);
-  const historyHTML = buildForecastHistoryHTML(chargeRec, cpt);
+  const status = calcCurrentStatus(chargeRec, delivery);
+  const forecast = calcForecast(chargeRec, delivery);
+  const historyHTML = buildForecastHistoryHTML(chargeRec, delivery);
   const chartId = 'modalChargeChart-' + chargeRec.id;
   sec.style.display = 'block';
   sec.innerHTML = `<div class="charge-panel" style="margin-top:0">
@@ -993,17 +993,17 @@ export function renderModalChargeSection(deliveryId, deliveryObj) {
 
     ${renderStatusHTML(status)}
 
-    ${forecast ? renderForecastHTML(forecast, cpt) : '<div style="font-size:11px;color:var(--muted);margin:10px 0">' + t('min_2_data') + '</div>'}
+    ${forecast ? renderForecastHTML(forecast, delivery) : '<div style="font-size:11px;color:var(--muted);margin:10px 0">' + t('min_2_data') + '</div>'}
 
     <div class="ed-chart-header">
       <div>
         <div class="ed-chart-title">${ICON_TREND} ${t('trend_analysis')}</div>
         <div class="ed-chart-sub">${chargeRec.snapshots.length} ${t('trend_sub')}</div>
       </div>
-      ${buildEditorialHeadRight(chargeRec, cpt)}
+      ${buildEditorialHeadRight(chargeRec, delivery)}
     </div>
     <div class="charge-chart-wrap-palet-lg"><canvas id="${chartId}-palet"></canvas></div>
-    ${buildKpiStrip(chargeRec, cpt)}
+    ${buildKpiStrip(chargeRec, delivery)}
     ${buildPaketGaugeHTML(chargeRec, true)}
 
     <div class="ed-section-title">${ICON_LIST} ${t('forecast_hist')}</div>
@@ -1024,7 +1024,7 @@ export function renderModalChargeSection(deliveryId, deliveryObj) {
       <button class="btn-charge-snapshot" onclick="window.__manualAddSnapshot('${chargeRec.id}')">+ ${t('data_add_btn')}</button>
     </div>
   </div>`;
-  setTimeout(() => drawChargeChart(chargeRec, cpt, chartId), 50);
+  setTimeout(() => drawChargeChart(chargeRec, delivery, chartId), 50);
 }
 
 // Aktif şarj yoksa: bu teslimata ait tamamlanmış (arşiv) şarj kaydının
@@ -1040,7 +1040,7 @@ function renderModalPastCharge(deliveryId, sec, deliveryObj) {
     avgPkgPerPalet: h.avgPkgPerPalet, chargeEndTime: h.chargeEndTime,
     startedAt: h.startedAt, startedAtMs: h._ts
   };
-  const cpt = deliveryStore.deliveries.find(c => c.id === deliveryId)
+  const delivery = deliveryStore.deliveries.find(c => c.id === deliveryId)
     || deliveryObj
     || historyStore.histCache.find(x => x.id === deliveryId && x._type !== 'charge_archive' && x._type !== 'grup_archive')
     || { id: deliveryId, name: h.deliveryName, palets: 0, existingPalet: 0, totalPkg: 0, avgPkgPerPalet: h.avgPkgPerPalet };
@@ -1053,11 +1053,11 @@ function renderModalPastCharge(deliveryId, sec, deliveryObj) {
     </div>
     ${renderStatusHTML(calcArchivedFinalStatus(recLike, cpt))}
     <div class="charge-chart-wrap-palet-lg"><canvas id="${chartId}-palet"></canvas></div>
-    ${buildKpiStrip(recLike, cpt)}
+    ${buildKpiStrip(recLike, delivery)}
     ${buildPaketGaugeHTML(recLike)}
     <div class="ed-section-title">${ICON_LIST} ${t('forecast_hist')}</div>
-    ${buildForecastHistoryHTML(recLike, cpt)}
+    ${buildForecastHistoryHTML(recLike, delivery)}
     ${buildCalibrationHistoryReadOnlyHTML(recLike)}
   </div>`;
-  setTimeout(() => drawChargeChart(recLike, cpt, chartId), 50);
+  setTimeout(() => drawChargeChart(recLike, delivery, chartId), 50);
 }
