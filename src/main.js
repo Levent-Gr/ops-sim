@@ -32,7 +32,7 @@ import {
   loadCharges, startCharge, startChargeFromSim, stopCharge,
   toggleChargePanel, manualAddSnapshot, recalibrateAvg, toggleRecalibForm,
   downloadChargeCSV, dismissChargeAlert, saveAlertSnapshot,
-  startChargeAlertTimer, checkChargeAlerts,
+  startChargeAlertTimer, checkChargeAlerts, autoStopExpiredCharges,
   startEditEndTime, cancelEndTimeEdit, saveChargeEndTime,
   startEditSnapshot, cancelEditSnapshot, saveEditSnapshot
 } from './charge.js';
@@ -93,8 +93,8 @@ async function showTab(id, el) {
   el.classList.add('on');
   if (id === 'gecmis') renderHistory();
   if (id === 'istatistik') { await loadDeliveries(); await loadDeliveryFolders(); renderStats(); }
-  if (id === 'delivery') { await loadDeliveries(); await loadDeliveryFolders(); renderDeliveries(); }
-  if (id === 'grup') { await loadDeliveries(); await loadGrups(); renderGrupTab(); }
+  if (id === 'delivery') { await autoStopExpiredCharges(); await loadDeliveries(); await loadDeliveryFolders(); renderDeliveries(); }
+  if (id === 'grup') { await autoStopExpiredCharges(); await loadDeliveries(); await loadGrups(); renderGrupTab(); }
   if (id === 'ayarlar') { renderThemeBtns(); renderPaletVolUI(); renderPkgCfgList(); }
 }
 
@@ -220,6 +220,8 @@ function startDayChangeWatcher() {
 async function refreshOnVisible() {
   try {
     const active = document.querySelector('.nav.on')?.dataset.tab;
+    // Bitişi geçen aktif şarjları otomatik durdur (⚡ soluğa döner) — sekmeye dönünce de geçerli.
+    await autoStopExpiredCharges();
     // Açık bir şarj paneli varsa teslimat listesini yeniden çizme: panel (ve
     // yazılmakta olan veri) kapanmasın. Panel yalnız ⚡ butonuyla kapatılır.
     const chargePanelOpen = active === 'delivery' &&
@@ -248,6 +250,7 @@ async function refreshOnVisible() {
   await loadGrups();
   await loadDeliveryFolders();
   await loadCharges();
+  await autoStopExpiredCharges();
   wireEvents();
   renderRecentCalcs();
   if (chargeStore.chargeCache.some(c => c.active)) startChargeAlertTimer();

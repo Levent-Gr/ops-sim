@@ -564,6 +564,25 @@ export async function stopCharge(chargeId) {
   try { if (typeof window.__renderHistory === 'function') window.__renderHistory(); } catch {}
 }
 
+// Bitiş saati geçmiş AKTİF şarjları otomatik durdurur (+ arşive yazar) — elle
+// "Durdur"a basılmış gibi. Teslimat Yönetimi'ndeki ⚡ butonu rengi aktif şarja
+// bağlı olduğundan, durdurulan şarjın butonu otomatik soluk (muted) görünür.
+// Durdurulan oldu ise true döner; çağıran listeleri tazeleyebilir.
+export async function autoStopExpiredCharges() {
+  let changed = false;
+  for (const rec of chargeStore.chargeCache) {
+    if (!rec.active || !isPastChargeEnd(rec)) continue;
+    rec.active = false;
+    rec.stoppedAt = rec.stoppedAt || nowStr();
+    rec.stoppedAtMs = rec.stoppedAtMs || Date.now();
+    try { await saveCharge(rec); } catch {}
+    try { await saveChargeToHistory(rec); } catch {}
+    changed = true;
+  }
+  if (changed) stopChargeAlertTimerIfNoActive();
+  return changed;
+}
+
 export function downloadChargeCSV(histId) {
   const h = historyStore.histCache.find(x => x.id === histId);
   if (!h) return;
@@ -910,7 +929,14 @@ function stopChargeAlertTimerIfNoActive() {
   }
 }
 
-export function checkChargeAlerts() {
+export async function checkChargeAlerts() {
+  // Bitişi geçen aktif şarjları otomatik durdur + arşivle. Durduysa listeleri tazele
+  // (⚡ soluğa döner). Açık şarj paneli varsa teslimat listesini yeniden çizme (M3).
+  if (await autoStopExpiredCharges()) {
+    const panelOpen = [...document.querySelectorAll('[id^="charge-panel-"]')].some(p => p.style.display === 'block');
+    if (!panelOpen && typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+    if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
+  }
   const today = new Date();
   const todayKey = today.getFullYear() + '-' + today.getMonth() + '-' + today.getDate();
   const activeCharges = chargeStore.chargeCache.filter(c => {
