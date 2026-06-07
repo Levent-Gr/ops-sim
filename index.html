@@ -89,10 +89,10 @@
           <textarea id="noteInput" data-i18n-ph="note_ph" placeholder="Bu hesaplama için notunuzu yazın..."></textarea>
         </div>
         <div class="sim-charge-toggle">
-          <label class="sim-charge-check">
-            <input type="checkbox" id="simChargeToggle"/>
+          <button type="button" id="simChargeToggle" class="sim-charge-btn" aria-pressed="false" title="Hesaplama ile şarj takibi başlat">
+            <span class="sim-charge-bolt">⚡</span>
             <span data-i18n="sim_charge_toggle">Hesaplama ile şarj takibi başlat</span>
-          </label>
+          </button>
         </div>
         <div class="sim-charge-fields" id="simChargeFields" style="display:none">
           <div class="charge-row">

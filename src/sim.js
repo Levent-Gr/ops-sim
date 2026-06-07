@@ -300,7 +300,7 @@ export async function runSim() {
 
   // Hesaplamadan şarj başlatma (opsiyonel). İşaretliyse bitiş saati + total ZORUNLU.
   // Şarj, simülasyondan AYRIDIR; yalnız kendi canlı total verisini tutar.
-  const chargeEnabled = !!document.getElementById('simChargeToggle')?.checked;
+  const chargeEnabled = !!document.getElementById('simChargeToggle')?.classList.contains('active');
   let chargeEndTime = '', chargeTotal = NaN;
   if (chargeEnabled) {
     chargeEndTime = (document.getElementById('simChargeEnd')?.value ?? '').trim();

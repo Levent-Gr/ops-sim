@@ -112,10 +112,14 @@ function wireEvents() {
   // Simülasyon
   document.getElementById('runBtn')?.addEventListener('click', runSim);
 
-  // Hesaplama ekranı — şarj aç/kapa kutusu: işaretliyse alanları göster
-  document.getElementById('simChargeToggle')?.addEventListener('change', e => {
+  // Hesaplama ekranı — şarj ⚡ butonu: aktifse alanları göster (pasif=soluk, aktif=turuncu)
+  document.getElementById('simChargeToggle')?.addEventListener('click', e => {
+    const btn = e.currentTarget;
+    const on = !btn.classList.contains('active');
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     const f = document.getElementById('simChargeFields');
-    if (f) f.style.display = e.target.checked ? 'block' : 'none';
+    if (f) f.style.display = on ? 'block' : 'none';
   });
 
   // Input — satır sayısı
