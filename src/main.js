@@ -29,7 +29,7 @@ import {
 } from './history.js';
 import { renderStats } from './stats.js';
 import {
-  loadCharges, startCharge, stopCharge,
+  loadCharges, startCharge, startChargeFromSim, stopCharge,
   toggleChargePanel, manualAddSnapshot, recalibrateAvg, toggleRecalibForm,
   downloadChargeCSV, dismissChargeAlert, saveAlertSnapshot,
   startChargeAlertTimer, checkChargeAlerts,
@@ -55,6 +55,7 @@ Object.assign(window, {
   __deleteHistItem: deleteHistItem,
   __toggleChargePanel: toggleChargePanel,
   __startCharge: startCharge,
+  __startChargeFromSim: startChargeFromSim,
   __stopCharge: stopCharge,
   __manualAddSnapshot: manualAddSnapshot,
   __recalibrateAvg: recalibrateAvg,
@@ -110,6 +111,12 @@ function wireEvents() {
 
   // Simülasyon
   document.getElementById('runBtn')?.addEventListener('click', runSim);
+
+  // Hesaplama ekranı — şarj aç/kapa kutusu: işaretliyse alanları göster
+  document.getElementById('simChargeToggle')?.addEventListener('change', e => {
+    const f = document.getElementById('simChargeFields');
+    if (f) f.style.display = e.target.checked ? 'block' : 'none';
+  });
 
   // Input — satır sayısı
   const inputEl = document.getElementById('input');
@@ -209,8 +216,12 @@ function startDayChangeWatcher() {
 async function refreshOnVisible() {
   try {
     const active = document.querySelector('.nav.on')?.dataset.tab;
+    // Açık bir şarj paneli varsa teslimat listesini yeniden çizme: panel (ve
+    // yazılmakta olan veri) kapanmasın. Panel yalnız ⚡ butonuyla kapatılır.
+    const chargePanelOpen = active === 'delivery' &&
+      [...document.querySelectorAll('[id^="charge-panel-"]')].some(p => p.style.display === 'block');
     if (active === 'delivery') {
-      await loadDeliveries(); await loadDeliveryFolders(); renderDeliveries();
+      if (!chargePanelOpen) { await loadDeliveries(); await loadDeliveryFolders(); renderDeliveries(); }
     } else if (active === 'grup') {
       await loadDeliveries(); await loadGrups(); renderGrupTab();
     } else if (active === 'gecmis') {

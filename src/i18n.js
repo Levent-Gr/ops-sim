@@ -118,7 +118,12 @@ export const I18N = {
     toast_reset: 'Sıfırlandı.',
     // Zaman birimleri
     unit_min: 'dk',
-    unit_per_min: '/dk'
+    unit_per_min: '/dk',
+    // Hesaplamadan şarj başlatma + bitiş saati guard
+    sim_charge_toggle: 'Hesaplama ile şarj takibi başlat',
+    charge_fields_required: '⚠ Şarj için bitiş saati ve geçerli total paket girin.',
+    charge_started_log: 'Şarj takibi başlatıldı',
+    charge_ended_no_data: 'Şarj bitiş saati geçti — veri eklenemez/düzenlenemez.'
   },
   en: {
     dlg_ok: 'OK', dlg_cancel: 'Cancel',
@@ -237,7 +242,12 @@ export const I18N = {
     toast_reset: 'Reset.',
     // Time units
     unit_min: 'min',
-    unit_per_min: '/min'
+    unit_per_min: '/min',
+    // Charge-from-calc + end-time guard
+    sim_charge_toggle: 'Start charge tracking with calculation',
+    charge_fields_required: '⚠ Enter charge end time and a valid total.',
+    charge_started_log: 'Charge tracking started',
+    charge_ended_no_data: "Charge end time passed — data can't be added/edited."
   }
 };
 

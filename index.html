@@ -88,6 +88,22 @@
           <div class="note-label" data-i18n="note_label">Not <span class="note-opt" data-i18n="note_opt">— isteğe bağlı</span></div>
           <textarea id="noteInput" data-i18n-ph="note_ph" placeholder="Bu hesaplama için notunuzu yazın..."></textarea>
         </div>
+        <div class="sim-charge-toggle">
+          <label class="sim-charge-check">
+            <input type="checkbox" id="simChargeToggle"/>
+            <span data-i18n="sim_charge_toggle">Hesaplama ile şarj takibi başlat</span>
+          </label>
+        </div>
+        <div class="sim-charge-fields" id="simChargeFields" style="display:none">
+          <div class="charge-row">
+            <span class="charge-label" data-i18n="charge_end_label">Şarj bitiş saati</span>
+            <input class="charge-input" type="time" id="simChargeEnd" value="13:30"/>
+          </div>
+          <div class="charge-row">
+            <span class="charge-label" data-i18n="charge_now_total">Şu anki total paket</span>
+            <input class="charge-input" type="number" min="0" id="simChargeTotal" placeholder="1200"/>
+          </div>
+        </div>
         <div class="btn-row">
           <button class="run" id="runBtn">
             <div class="spinner" id="spinner"></div>

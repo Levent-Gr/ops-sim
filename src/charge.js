@@ -498,16 +498,26 @@ export function renderForecastHTML(f, delivery) {
 }
 
 // ─── Şarj operasyonları ──────────────────────────────────────────
-export async function startCharge(deliveryId) {
-  const delivery = deliveryStore.deliveries.find(c => c.id === deliveryId); if (!delivery) return;
-  const endTime = document.getElementById('cend-' + deliveryId)?.value || '13:30';
-  const totalRaw = numVal(document.getElementById('ctotal-' + deliveryId));
+// Şarjın bitiş saati (başlangıç günü baz alınarak) geçti mi? Bitiş sonrası
+// veri girişi/düzenlemesi engellenir (canlı veri yalnız şarj penceresinde geçerli).
+export function isPastChargeEnd(rec, atMs = Date.now()) {
+  if (!rec || !rec.chargeEndTime) return false;
+  const startMs = rec.startedAtMs || rec.snapshots?.[0]?.tsMs || atMs;
+  const b = new Date(startMs);
+  const [eh, em] = rec.chargeEndTime.split(':').map(Number);
+  const endMs = new Date(b.getFullYear(), b.getMonth(), b.getDate(), eh, em, 0).getTime();
+  return atMs >= endMs;
+}
+
+// Bir teslimat nesnesinden şarj kaydı oluşturup saklar. avgPkgPerPalet
+// simülasyondan gelir (auto_from_sim); şarj yalnız kendi total/snapshot verisini tutar,
+// simülasyonun palet/ortalama hesabına dokunmaz.
+async function createChargeRecord(delivery, endTime, totalRaw) {
   const ppp = delivery.avgPkgPerPalet || Math.round(delivery.totalPkg / Math.max(1, delivery.palets)) || 150;
-  if (isNaN(totalRaw) || totalRaw < 0) { await alertDialog(t('valid_total_required')); return; }
   const now = new Date();
   const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
   const rec = {
-    id: uid(), deliveryId, deliveryName: delivery.name, chargeEndTime: endTime, avgPkgPerPalet: ppp, active: true,
+    id: uid(), deliveryId: delivery.id, deliveryName: delivery.name, chargeEndTime: endTime, avgPkgPerPalet: ppp, active: true,
     startedAt: nowStr(), startedAtMs: Date.now(),
     snapshots: [{ time: timeStr, tsMs: Date.now(), total: totalRaw, shipped: 0, avgAtTime: ppp }],
     calibrations: [{
@@ -516,10 +526,30 @@ export async function startCharge(deliveryId) {
     }]
   };
   await saveCharge(rec);
+  return rec;
+}
+
+export async function startCharge(deliveryId) {
+  const delivery = deliveryStore.deliveries.find(c => c.id === deliveryId); if (!delivery) return;
+  const endTime = document.getElementById('cend-' + deliveryId)?.value || '13:30';
+  const totalRaw = numVal(document.getElementById('ctotal-' + deliveryId));
+  if (isNaN(totalRaw) || totalRaw < 0) { await alertDialog(t('valid_total_required')); return; }
+  const rec = await createChargeRecord(delivery, endTime, totalRaw);
   startChargeAlertTimer();
   if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
   if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
   setTimeout(() => drawChargeChart(rec, delivery), 50);
+}
+
+// Hesaplama ekranından: simülasyonla oluşan teslimat nesnesiyle şarj başlatır.
+// Grafik çizimi sim ekranında gerekmediğinden çağrılmaz; listeler tazelenir.
+export async function startChargeFromSim(delivery, endTime, totalRaw) {
+  if (!delivery || isNaN(totalRaw) || totalRaw < 0) return null;
+  const rec = await createChargeRecord(delivery, endTime, totalRaw);
+  startChargeAlertTimer();
+  if (typeof window.__renderDeliveries === 'function') window.__renderDeliveries();
+  if (typeof window.__renderGrupTab === 'function') window.__renderGrupTab();
+  return rec;
 }
 
 export async function stopCharge(chargeId) {
@@ -713,6 +743,7 @@ export function cancelEditSnapshot(chargeId, idx) {
 
 export async function saveEditSnapshot(chargeId, idx) {
   const rec = chargeStore.chargeCache.find(c => c.id === chargeId); if (!rec) return;
+  if (isPastChargeEnd(rec)) { await alertDialog(t('charge_ended_no_data')); return; }
   if (!rec.snapshots || !rec.snapshots[idx]) return;
   const ti = document.getElementById('pktEditTotal-' + chargeId + '-' + idx);
   const si = document.getElementById('pktEditShipped-' + chargeId + '-' + idx);
@@ -739,6 +770,8 @@ export function toggleRecalibForm(chargeId) {
 }
 
 export async function manualAddSnapshot(chargeId) {
+  const recM = chargeStore.chargeCache.find(c => c.id === chargeId);
+  if (recM && isPastChargeEnd(recM)) { await alertDialog(t('charge_ended_no_data')); return; }
   const totalEl = document.getElementById('mtotal-' + chargeId);
   const shippedEl = document.getElementById('mshipped-' + chargeId);
   const total = numVal(totalEl);
@@ -936,6 +969,13 @@ function showChargeAlert(charges) {
 export async function saveAlertSnapshot(chargeId) {
   const totalEl = document.getElementById('alert-total-' + chargeId);
   const shippedEl = document.getElementById('alert-shipped-' + chargeId);
+  const recA = chargeStore.chargeCache.find(c => c.id === chargeId);
+  if (recA && isPastChargeEnd(recA)) {
+    await alertDialog(t('charge_ended_no_data'));
+    const item = totalEl?.closest('.charge-alert-item');
+    if (item) { item.style.opacity = '.4'; item.style.pointerEvents = 'none'; }
+    return;
+  }
   const total = numVal(totalEl);
   if (isNaN(total) || total < 0) { totalEl.style.borderColor = 'rgba(248,113,113,.5)'; return; }
   const shipped = numVal(shippedEl) || 0;
@@ -1051,7 +1091,7 @@ function renderModalPastCharge(deliveryId, sec, deliveryObj) {
       <span>${ICON_BOLT} ${t('past_charge_data')} — ${t('charge_end_at')}: ${safe(h.chargeEndTime || '—')}</span>
       <button type="button" class="btn-download-csv" onclick="window.__openChargeArchiveFromDelivery('${safe(h.id)}')">${ICON_LIST} ${t('charge_history')}</button>
     </div>
-    ${renderStatusHTML(calcArchivedFinalStatus(recLike, cpt))}
+    ${renderStatusHTML(calcArchivedFinalStatus(recLike, delivery))}
     <div class="charge-chart-wrap-palet-lg"><canvas id="${chartId}-palet"></canvas></div>
     ${buildKpiStrip(recLike, delivery)}
     ${buildPaketGaugeHTML(recLike)}

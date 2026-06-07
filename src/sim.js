@@ -1,7 +1,7 @@
 import { CAT_COLORS, configStore, deliveryStore, historyStore, uiStore } from './state.js';
 import { STORES, idbPut, idbGetAll } from './db.js';
 import { t } from './i18n.js';
-import { uid, nowStr, isToday, delay, safe } from './utils.js';
+import { uid, nowStr, isToday, delay, safe, numVal } from './utils.js';
 import { cat, vol, getCatOfPkg } from './config.js';
 import { alertDialog } from './dialog.js';
 
@@ -241,15 +241,13 @@ export async function saveHistory(entry) {
 
 async function saveDeliveryEntry(entry) {
   const existing = deliveryStore.deliveries.find(c => c.name === entry.name && c.date === entry.date);
-  let limitHit = false;
-  if (!existing) {
-    entry._ts = Date.now();
-    // Sessiz silme YOK; yalnız çok yüksek eşikte bir kez uyarı.
-    limitHit = deliveryStore.deliveries.length >= HIST_WARN_LIMIT;
-    await idbPut(STORES.deliveries, entry);
-    deliveryStore.deliveries.unshift(entry);
-  }
-  return limitHit;
+  if (existing) return { limitHit: false, stored: existing };
+  entry._ts = Date.now();
+  // Sessiz silme YOK; yalnız çok yüksek eşikte bir kez uyarı.
+  const limitHit = deliveryStore.deliveries.length >= HIST_WARN_LIMIT;
+  await idbPut(STORES.deliveries, entry);
+  deliveryStore.deliveries.unshift(entry);
+  return { limitHit, stored: entry };
 }
 
 // ─── Recent calcs ────────────────────────────────────────────────
@@ -300,6 +298,22 @@ export async function runSim() {
   // Mevcut palet tam sayı olmak zorunda değil — saha durumlarında ondalık girilebilir.
   const existingPalet = Math.max(0, parseFloat((document.getElementById('existingPaletInput')?.value ?? '').trim()) || 0);
 
+  // Hesaplamadan şarj başlatma (opsiyonel). İşaretliyse bitiş saati + total ZORUNLU.
+  // Şarj, simülasyondan AYRIDIR; yalnız kendi canlı total verisini tutar.
+  const chargeEnabled = !!document.getElementById('simChargeToggle')?.checked;
+  let chargeEndTime = '', chargeTotal = NaN;
+  if (chargeEnabled) {
+    chargeEndTime = (document.getElementById('simChargeEnd')?.value ?? '').trim();
+    chargeTotal = numVal(document.getElementById('simChargeTotal'));
+    if (!/^\d{2}:\d{2}$/.test(chargeEndTime) || isNaN(chargeTotal) || chargeTotal < 0) {
+      showWarn(t('charge_fields_required'));
+      const badId = (isNaN(chargeTotal) || chargeTotal < 0) ? 'simChargeTotal' : 'simChargeEnd';
+      const badEl = document.getElementById(badId);
+      if (badEl) { badEl.style.borderColor = 'rgba(248,113,113,.5)'; badEl.focus(); setTimeout(() => badEl.style.borderColor = '', 2500); }
+      return;
+    }
+  }
+
   uiStore.simRunning = true;
   const btn = document.getElementById('runBtn');
   const spinner = document.getElementById('spinner');
@@ -326,7 +340,11 @@ export async function runSim() {
 
   setProgress(15, 'Kodlar doğrulanıyor...'); await delay(300);
   addLog(`▸ <span>${rawLines.length}</span> ${t('lines')} · <span>${Object.keys(counts).length}</span> ${t('log_unique')}`);
-  if (unknown.length) addLog(`⚠ ${t('unknown_pkg')}: <span>${safe(unknown.join(', '))}</span>`, 'warn');
+  if (unknown.length) {
+    const unknownTotal = unknown.reduce((a, c) => a + counts[c], 0);
+    const unknownDetail = unknown.map(c => `${safe(c)} ×${counts[c]}`).join(', ');
+    addLog(`⚠ ${t('unknown_pkg')} (${unknownTotal} ${t('pkg_label').toLowerCase()}): <span>${unknownDetail}</span>`, 'warn');
+  }
   known.forEach(p => addLog(`· ${safe(p)} <span>×${counts[p]}</span> · ${(vol(p) / 1e6).toFixed(2)}L`));
 
   setProgress(28, 'Hacim...'); addLog(`▸ <span>${t('log_vol_analysis')}</span>`, 'phase'); await delay(600);
@@ -455,7 +473,13 @@ export async function runSim() {
     if (configStore.DIMS[code] && vol(code) <= configStore.PALET_VOL) validCounts[code] = cnt;
   }
   const histLimit = await saveHistory({ id: uid(), deliveryName: titleVal, totalPkg: validPkgCount, palets: nS, existingPalet, avgPct, date: nowStr(), note, paletDetails, counts: validCounts, avgPkgPerPalet });
-  const delLimit = await saveDeliveryEntry({ id: uid(), name: titleVal, totalPkg: validPkgCount, palets: nS, existingPalet, avgPct, date: nowStr(), note, paletDetails, counts: validCounts, grups: [], avgPkgPerPalet });
+  const delRes = await saveDeliveryEntry({ id: uid(), name: titleVal, totalPkg: validPkgCount, palets: nS, existingPalet, avgPct, date: nowStr(), note, paletDetails, counts: validCounts, grups: [], avgPkgPerPalet });
+  const delLimit = delRes.limitHit;
+  // Hesaplamadan şarj başlatma istendiyse: oluşan teslimata bağla (sim ekranında kalınır).
+  if (chargeEnabled && delRes.stored && typeof window.__startChargeFromSim === 'function') {
+    await window.__startChargeFromSim(delRes.stored, chargeEndTime, chargeTotal);
+    addLog(`⚡ <span>${t('charge_started_log')}</span>`, 'phase');
+  }
   renderRecentCalcs();
   // Kayıt sınırı aşıldıysa kullanıcıyı bir kez uyar (sim bittikten sonra, akışı bölmeden)
   if ((histLimit || delLimit) && !_limitWarnShown) {
