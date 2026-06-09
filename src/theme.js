@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 export function setTheme(th) {
   document.body.className = document.body.className.replace(/theme-\w+/g, '').trim();
   if (th === 'dark') document.body.classList.add('theme-dark');

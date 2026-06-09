@@ -25,3 +25,8 @@
 .main{padding:20px;display:flex;flex-direction:column;gap:14px;overflow:auto}
 .row3{display:grid;grid-template-columns:1.2fr minmax(0,1fr) minmax(0,1fr);gap:12px}
 .row3b{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:12px}
+
+/* Kalıcı yazar/atıf footer'ı — tüm sekmelerde görünür (margin-top:auto ile main'in dibine sabit) */
+.app-footer{margin-top:auto;padding:14px 4px 2px;text-align:center;font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.5px;border-top:1px solid var(--border)}
+.app-footer a{color:var(--muted);text-decoration:none;transition:.15s}
+.app-footer a:hover{color:var(--accent)}

@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 import './styles/main.css';
 
 import { chargeStore, uiStore } from './state.js';

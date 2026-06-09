@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 import { uiStore } from './state.js';
 
 export const I18N = {

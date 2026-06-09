@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 export function uid() {
   // padEnd: Math.random() çok küçük değer dönerse boş/kısa string üretmesini engeller
   return Math.random().toString(36).slice(2).padEnd(9, '0').slice(0, 9);

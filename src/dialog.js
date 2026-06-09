@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 // Uygulama-içi onay/uyarı modalı — native confirm()/alert() yerine.
 // Tema uyumlu, Promise tabanlı; mesaj textContent ile basılır (XSS güvenli).
 import { t } from './i18n.js';

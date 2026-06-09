@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 // ─── Barrel: alan-bazlı store'lar + global sabitler ─────────────
 // Seviye 2 tam göç tamamlandı: tek "god object" (state) kaldırıldı.
 // Veri artık domain'e göre ayrı store modüllerinde yaşıyor. Bu dosya yalnızca

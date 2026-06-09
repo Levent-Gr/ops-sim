@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 import { chargeStore, deliveryStore, grupStore } from './state.js';
 import { STORES, idbGet, idbPut, idbDelete, idbGetAll } from './db.js';
 import { t } from './i18n.js';

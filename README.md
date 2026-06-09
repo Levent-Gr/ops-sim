@@ -64,6 +64,12 @@ src/
 └── styles/              # CSS — base, layout, components/
 ```
 
+## Yazar / Author
+
+**Levent Görgü** — [github.com/Levent-Gr](https://github.com/Levent-Gr)
+
+Bu proje Levent Görgü tarafından geliştirilmiştir.
+
 ## Lisans
 
-MIT
+MIT © 2026 Levent Görgü

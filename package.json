@@ -2,6 +2,9 @@
   "name": "ops-sim",
   "version": "1.0.0",
   "description": "OPS · SIM — Paket/palet simülasyon ve teslimat takip aracı",
+  "author": "Levent Görgü (https://github.com/Levent-Gr)",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/Levent-Gr/ops-sim.git" },
   "type": "module",
   "private": true,
   "scripts": {

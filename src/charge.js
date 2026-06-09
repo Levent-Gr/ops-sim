@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 import Chart from 'chart.js/auto';
 import { chargeStore, deliveryStore, historyStore, uiStore } from './state.js';
 import { STORES, idbGetAll, idbPut } from './db.js';

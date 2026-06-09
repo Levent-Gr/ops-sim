@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 import { CAT_COLORS, configStore, deliveryStore, historyStore, uiStore } from './state.js';
 import { STORES, idbPut, idbGetAll } from './db.js';
 import { t } from './i18n.js';

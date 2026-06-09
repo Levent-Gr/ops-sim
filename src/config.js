@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 import { configStore, uiStore } from './state.js';
 import { STORES, idbGet, idbPut, idbDelete } from './db.js';
 import { t } from './i18n.js';

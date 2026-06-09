@@ -1,3 +1,4 @@
+// ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 export const DB_NAME = 'ops_sim_db';
 export const DB_VER = 3;
 
