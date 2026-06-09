@@ -13,24 +13,6 @@ Paket/palet simülasyon ve teslimat takip aracı. Saha çalışanları için tas
 - **Ayarlar:** Paket boyutları/limitleri, palet boyutu, dark/light tema, TR/EN dil desteği
 - **Backup:** JSON ile tam yedekleme ve geri yükleme
 
-## Kurulum
-
-```bash
-npm install
-npm run dev
-```
-
-Tarayıcıda http://localhost:5173 açılır.
-
-## Production Build
-
-```bash
-npm run build
-npm run preview
-```
-
-Build çıktısı `dist/` klasöründe olur ve herhangi bir statik hosting'e (GitHub Pages, Netlify, vb.) yüklenebilir.
-
 ## Mimari
 
 Modüller `src/` kökünde düz `.js` dosyaları olarak yaşar (alt klasör hiyerarşisi yoktur).
