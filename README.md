@@ -12,6 +12,12 @@
 ![i18n](https://img.shields.io/badge/i18n-TR_·_EN-8b5cf6)
 ![License](https://img.shields.io/badge/License-MIT-22c55e)
 
+<br/>
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Try_it_now-2ea44f?style=for-the-badge&logo=github)](https://levent-gr.github.io/ops-sim/)
+
+**▶ Canlı dene · Try it live → [levent-gr.github.io/ops-sim](https://levent-gr.github.io/ops-sim/)**
+
 </div>
 
 > **TR —** Sahadaki paket akışından, teslimat saatinde kaç palete ulaşılacağını **iki bağımsız yöntemle** önceden tahmin eder: bir **paketleme simülasyonu** ve **canlı şarj takibi**. Tamamen tarayıcıda çalışır — backend yok, kullanıcı hesabı yok, tüm veriler cihazda kalır.
