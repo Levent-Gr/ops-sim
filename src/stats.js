@@ -1,6 +1,6 @@
 // ops_sim — Author: Levent Görgü (github.com/Levent-Gr) — (c) 2026
 import Chart from 'chart.js/auto';
-import { historyStore } from './state.js';
+import { historyStore, grupStore } from './state.js';
 import { STORES, idbGetAll, idbPut } from './db.js';
 import { t } from './i18n.js';
 import { safe } from './utils.js';
@@ -46,6 +46,28 @@ function buildRows() {
       sim: simPalet, charge: chargePred, actual, toolPred, err, absErr, pct,
       rec: tes
     });
+  }
+  // ── Sevkiyat (grup) satırları — tek satır: tahmin (şarj-dahil snapshot) vs gerçekleşen ──
+  const pushShip = (id, name, folder, dateStr, ts, predicted, actualRaw, rec) => {
+    const a = Number(actualRaw);
+    if (isNaN(a)) return;
+    const toolPred = Number(predicted) || 0;
+    const err = a - toolPred, absErr = Math.abs(err);
+    const pct = a > 0 ? Math.round(absErr / a * 100) : 0;
+    rows.push({
+      id, name, folder: folder || t('unclassified'),
+      date: (dateStr || '').split(' ')[0] || '—', ts: ts || 0,
+      sim: toolPred, charge: null, actual: a, toolPred, err, absErr, pct,
+      type: 'shipment', rec
+    });
+  };
+  for (const g of all.filter(h => h._type === 'grup_archive')) {
+    if (g.actualPalet == null || g.actualPalet === '') continue;
+    pushShip(g.id, g.grupName || '—', g.statFolder, g.archivedAt || g.date, g._ts, g.predictedPalet, g.actualPalet, g);
+  }
+  for (const g of (grupStore.grups || [])) {
+    if (g.actualPalet == null || g.actualPalet === '') continue;
+    pushShip('grp_' + g.id, g.name || '—', g.statFolder, g.analyzedAt, g.analyzedAtMs, g.predictedPalet, g.actualPalet, g);
   }
   return rows;
 }
@@ -155,19 +177,25 @@ function paint() {
   const sortArrow = key => _sortKey === key ? (_sortDir === 'asc' ? ' ▲' : ' ▼') : '';
 
   const rowsHtml = sortRows(view).map(r => {
-    const editing = r.id === _editingId;
+    const isShip = r.type === 'shipment';
+    const editing = !isShip && r.id === _editingId;
     const actualCell = editing
       ? `<div class="stats-td stats-edit-cell">
            <input type="number" min="0" step="any" class="stats-edit-input" id="statsEdit-${safe(r.id)}" value="${r.actual}"/>
            <button class="stats-edit-save" data-save="${safe(r.id)}" title="${t('save')}">✓</button>
            <button class="stats-edit-cancel" data-cancel="${safe(r.id)}" title="${t('dlg_cancel')}">✕</button>
          </div>`
-      : `<div class="stats-td stats-td-actual">${r.actual}
+      : isShip
+        ? `<div class="stats-td stats-td-actual">${r.actual}</div>`
+        : `<div class="stats-td stats-td-actual">${r.actual}
            <button class="stats-row-edit" data-edit="${safe(r.id)}" title="${t('edit_data')}" aria-label="${t('edit_data')}">✎</button>
            <button class="stats-row-del" data-del="${safe(r.id)}" title="${t('delete_grup')}" aria-label="${t('delete_grup')}">×</button>
          </div>`;
-    return `<div class="stats-trow" data-id="${safe(r.id)}" role="button" tabindex="0">
-      <div class="stats-td stats-td-name">${safe(r.name)}</div>
+    const nameCell = isShip
+      ? `<div class="stats-td stats-td-name"><span class="stats-svk-badge">SVK</span>${safe(r.name)}</div>`
+      : `<div class="stats-td stats-td-name">${safe(r.name)}</div>`;
+    return `<div class="stats-trow${isShip ? ' stats-trow-ship' : ''}" data-id="${safe(r.id)}" ${isShip ? '' : 'role="button" tabindex="0"'}>
+      ${nameCell}
       <div class="stats-td stats-td-folder">${safe(r.folder)}</div>
       <div class="stats-td stats-td-date">${safe(r.date)}</div>
       <div class="stats-td">${r.sim}</div>
@@ -272,7 +300,7 @@ function wireEvents(el, view) {
     const open = e => {
       if (e && (e.target.closest('button') || e.target.closest('input'))) return;
       const r = view.find(x => x.id === rowEl.dataset.id);
-      if (r) openDeliveryModal(r.rec, 'hist');
+      if (r && r.type !== 'shipment') openDeliveryModal(r.rec, 'hist');
     };
     rowEl.addEventListener('click', open);
     rowEl.addEventListener('keydown', e => { if (e.key === 'Enter') { open(e); } });

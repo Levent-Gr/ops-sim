@@ -124,7 +124,10 @@ export const I18N = {
     sim_charge_toggle: 'Hesaplama ile şarj takibi başlat',
     charge_fields_required: '⚠ Şarj için bitiş saati ve geçerli total paket girin.',
     charge_started_log: 'Şarj takibi başlatıldı',
-    charge_ended_no_data: 'Şarj bitiş saati geçti — veri eklenemez/düzenlenemez.'
+    charge_ended_no_data: 'Şarj bitiş saati geçti — veri eklenemez/düzenlenemez.',
+    // Sevkiyat analizi
+    analyze_add: 'Analize Ekle',
+    shipment_total: 'Sevkiyat total (tahmini)'
   },
   en: {
     dlg_ok: 'OK', dlg_cancel: 'Cancel',
@@ -248,7 +251,10 @@ export const I18N = {
     sim_charge_toggle: 'Start charge tracking with calculation',
     charge_fields_required: '⚠ Enter charge end time and a valid total.',
     charge_started_log: 'Charge tracking started',
-    charge_ended_no_data: "Charge end time passed — data can't be added/edited."
+    charge_ended_no_data: "Charge end time passed — data can't be added/edited.",
+    // Shipment analysis
+    analyze_add: 'Add to analysis',
+    shipment_total: 'Shipment total (predicted)'
   }
 };
 

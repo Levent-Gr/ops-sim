@@ -11,6 +11,9 @@
 .actual-delta-good{color:var(--green,#10b981);font-weight:600}
 .actual-delta-mid{color:#d99a16;font-weight:600}
 .actual-delta-bad{color:#ef4444;font-weight:600}
+/* Analiz tablosunda sevkiyat satırı rozeti */
+.stats-svk-badge{display:inline-block;font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.5px;color:var(--accent);background:rgba(91,127,255,.12);border:1px solid rgba(91,127,255,.25);border-radius:4px;padding:1px 5px;margin-right:6px;vertical-align:middle}
+.stats-trow-ship{background:rgba(91,127,255,.04)}
 .actual-charge-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;margin:2px 0 12px}
 .actual-charge-badge.on{color:var(--green,#10b981);background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3)}
 .actual-charge-badge.off{color:var(--muted);background:var(--surface3);border:1px solid var(--border)}

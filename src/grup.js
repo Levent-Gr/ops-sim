@@ -7,7 +7,8 @@ import { grupIconSVG } from './icons.js';
 import { saveHistory } from './sim.js';
 import { saveDeliveryFolders } from './delivery.js';
 import { getDeliveryChargeInfo } from './charge.js';
-import { confirmDialog } from './dialog.js';
+import { confirmDialog, alertDialog, showToast } from './dialog.js';
+import { getFolderSuggestions } from './history.js';
 
 // Bir teslimatın sevkiyata palet katkısı: şarjı varsa "şarj dahil nihai tahmin"
 // (mevcut + sim + gelen + kalan), yoksa sim + mevcut. Şarj verisinden canlı hesaplanır.
@@ -20,6 +21,16 @@ function memberPaletStr(c) {
   const mp = memberPaletInfo(c);
   if (mp.charged) return mp.palet + 'p ⚡';
   return c.existingPalet > 0 ? (c.palets + c.existingPalet) + 'p (' + c.palets + '+' + c.existingPalet + ')' : c.palets + 'p';
+}
+
+// Sevkiyat tahmini vs gerçekleşen sapma rozeti (teslimat modalıyla aynı sınıflar).
+function _grpDelta(actual, pred) {
+  if (actual == null || actual === '' || pred == null) return '';
+  const a = Number(actual), p = Number(pred), err = a - p, abs = Math.abs(err);
+  const pct = a > 0 ? Math.round(abs / a * 100) : 0;
+  const cls = abs <= 1 ? 'actual-delta-good' : (pct <= 15 ? 'actual-delta-mid' : 'actual-delta-bad');
+  const sign = err > 0 ? '+' : (err < 0 ? '−' : '±');
+  return `<span class="${cls}">${t('deviation')}: ${sign}${abs} ${t('palet_lbl')} (${pct}%)</span>`;
 }
 
 export async function loadGrups() {
@@ -88,9 +99,13 @@ export async function archiveGrup(gid) {
   const g = grupStore.grups.find(gr => gr.id === gid); if (!g) return;
   if (!(await confirmDialog(t('archive_grup') + '?'))) return;
   const members = g.ids.map(id => deliveryStore.deliveries.find(c => c.id === id)).filter(Boolean);
+  // Şarj-dahil tahmin toplamını arşive yaz (üyeler silinmeden önce); analiz alanlarını taşı.
+  const predictedPalet = members.reduce((a, c) => a + memberPaletInfo(c).palet, 0);
   const histEntry = {
     id: uid(), _type: 'grup_archive',
     grupName: g.name, note: g.note || '', createdAt: g.createdAt || '', archivedAt: nowStr(),
+    predictedPalet,
+    ...(g.statFolder ? { statFolder: g.statFolder, actualPalet: g.actualPalet, analyzedAt: g.analyzedAt } : {}),
     members: members.map(c => ({
       id: c.id, name: c.name, totalPkg: c.totalPkg, palets: c.palets,
       existingPalet: c.existingPalet || 0, avgPct: c.avgPct, date: c.date,
@@ -108,6 +123,32 @@ export async function archiveGrup(gid) {
   await saveGrups();
   renderGrupTab();
   if (typeof window.__renderHistory === 'function') window.__renderHistory();
+}
+
+// Aktif sevkiyatı analize al: tahmin (şarj-dahil) dondurulur; gerçekleşen + grup kaydedilir.
+// Boş gerçekleşen = analizden çıkar. Veriler grup nesnesinde (config store) kalıcı.
+export async function saveGrupActual(gid) {
+  const g = grupStore.grups.find(gr => gr.id === gid); if (!g) return;
+  const actInp = document.getElementById('grpActual-' + gid);
+  if (!actInp) return;
+  const raw = (actInp.value || '').trim();
+  if (raw === '') {
+    delete g.actualPalet; delete g.statFolder; delete g.predictedPalet; delete g.analyzedAt; delete g.analyzedAtMs;
+  } else {
+    const v = parseFloat(raw);
+    if (isNaN(v) || v < 0) { await alertDialog(t('valid_total_required')); return; }
+    const folder = (document.getElementById('grpFolder-' + gid)?.value || '').trim();
+    if (!folder) { await alertDialog(t('folder_required')); return; }
+    const members = g.ids.map(id => deliveryStore.deliveries.find(c => c.id === id)).filter(Boolean);
+    g.predictedPalet = members.reduce((a, c) => a + memberPaletInfo(c).palet, 0);
+    g.actualPalet = v;
+    g.statFolder = folder;
+    g.analyzedAt = nowStr();
+    g.analyzedAtMs = Date.now();
+  }
+  await saveGrups();
+  renderGrupTab();
+  showToast('✓ ' + t('saved_toast'));
 }
 
 export function renderGrupTab() {
@@ -148,6 +189,10 @@ export function renderGrupTab() {
   }
   visibleGrups.forEach(grup => {
     const members = grup.ids.map(id => deliveryStore.deliveries.find(c => c.id === id)).filter(Boolean);
+    const gPred = members.reduce((a, c) => a + memberPaletInfo(c).palet, 0);
+    const gFolder = grup.statFolder || '';
+    const gActual = (grup.actualPalet != null && grup.actualPalet !== '') ? grup.actualPalet : '';
+    const gFolderOpts = getFolderSuggestions().map(n => `<option value="${safe(n)}"></option>`).join('');
     const grupDateStr = grup.createdAt ? `<div style="font-size:10px;color:var(--muted);margin-top:2px;font-family:var(--mono)">${safe(grup.createdAt)}</div>` : '';
     const card = document.createElement('div'); card.className = 'grup-card';
     card.innerHTML = `
@@ -192,8 +237,22 @@ export function renderGrupTab() {
         </div>
         ${members.length ? `<div class="grup-stats">
           <div class="grup-stat">${t('members_label')}: <span>${members.length}</span></div>
-          <div class="grup-stat">${t('palet_label')}: <span>${members.reduce((a, c) => a + memberPaletInfo(c).palet, 0)}</span></div>
+          <div class="grup-stat">${t('palet_label')}: <span>${gPred}</span></div>
           <div class="grup-stat">${t('pkg_label')}: <span>${members.reduce((a, c) => a + c.totalPkg, 0)}</span></div>
+        </div>
+        <div class="grup-analyze">
+          <div class="grup-analyze-head">${t('analyze_add')} · ${t('shipment_total')}: <b>${gPred}</b></div>
+          <div class="actual-entry-row">
+            <span class="charge-label">${t('folder_label')}</span>
+            <input class="charge-input actual-folder-input" list="grpFolderSuggest-${safe(grup.id)}" id="grpFolder-${safe(grup.id)}" value="${gFolder !== '' ? safe(gFolder) : ''}" placeholder="${t('folder_label')}…"/>
+            <datalist id="grpFolderSuggest-${safe(grup.id)}">${gFolderOpts}</datalist>
+          </div>
+          <div class="actual-entry-row">
+            <span class="charge-label">${t('actual_palet_label')}</span>
+            <input class="charge-input" type="number" min="0" step="any" id="grpActual-${safe(grup.id)}" value="${gActual !== '' ? safe(String(gActual)) : ''}" placeholder="${safe(String(gPred))}"/>
+            <button class="btn-charge-snapshot" onclick="window.__saveGrupActual('${safe(grup.id)}')">${t('save')}</button>
+          </div>
+          <div class="actual-delta">${_grpDelta(gActual, gPred)}</div>
         </div>` : ''}
       </div>`;
     areaEl.appendChild(card);

@@ -20,13 +20,13 @@ import {
   loadGrups, renderGrupTab,
   createGrup, deleteGrup, removeFromGrup,
   startEditGrupName, saveGrupName, toggleGrupNote, saveGrupNote,
-  archiveGrup
+  archiveGrup, saveGrupActual
 } from './grup.js';
 import {
   renderHistory, toggleHistDetail, deleteHistItem, clearHistory,
   openDeliveryModal, openDeliveryModalById, openDeliveryModalFromObj,
   closeModal, closeModalDirect, openChargeArchiveModal, openChargeArchiveById,
-  saveActualPalet
+  saveActualPalet, saveGrupArchiveActual
 } from './history.js';
 import { renderStats } from './stats.js';
 import {
@@ -76,6 +76,8 @@ Object.assign(window, {
   __toggleGrupNote: toggleGrupNote,
   __saveGrupNote: saveGrupNote,
   __archiveGrup: archiveGrup,
+  __saveGrupActual: saveGrupActual,
+  __saveGrupArchiveActual: saveGrupArchiveActual,
   __deleteGrup: deleteGrup,
   __removeFromGrup: removeFromGrup,
   __deleteDeliveryFolder: deleteDeliveryFolder,
@@ -93,7 +95,7 @@ async function showTab(id, el) {
   document.getElementById('tab-' + id).classList.add('active');
   el.classList.add('on');
   if (id === 'gecmis') renderHistory();
-  if (id === 'istatistik') { await loadDeliveries(); await loadDeliveryFolders(); renderStats(); }
+  if (id === 'istatistik') { await loadDeliveries(); await loadDeliveryFolders(); await loadGrups(); renderStats(); }
   if (id === 'delivery') { await autoStopExpiredCharges(); await loadDeliveries(); await loadDeliveryFolders(); renderDeliveries(); }
   if (id === 'grup') { await autoStopExpiredCharges(); await loadDeliveries(); await loadGrups(); renderGrupTab(); }
   if (id === 'ayarlar') { renderThemeBtns(); renderPaletVolUI(); renderPkgCfgList(); }

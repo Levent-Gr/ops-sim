@@ -199,6 +199,10 @@ export async function renderHistory() {
       items.forEach(h => {
         const div = document.createElement('div'); div.className = 'hist-item';
         div.ondblclick = () => toggleHistDetail('hd-' + h.id); div.title = 'Çift tıkla → Detay';
+        const aPred = (typeof h.predictedPalet === 'number') ? h.predictedPalet : (h.members || []).reduce((a, m) => a + (m.palets || 0) + (m.existingPalet || 0), 0);
+        const aFolder = h.statFolder || '';
+        const aActual = (h.actualPalet != null && h.actualPalet !== '') ? h.actualPalet : '';
+        const aFolderOpts = getFolderSuggestions().map(n => `<option value="${safe(n)}"></option>`).join('');
         div.innerHTML = `
           <div class="hist-header">
             <span class="hist-badge hist-badge-grp">SVK</span>
@@ -212,6 +216,20 @@ export async function renderHistory() {
           </div>
           <div class="hist-detail" id="hd-${safe(h.id)}">
             ${h.note ? `<div class="hist-note-block" style="margin-bottom:10px"><div class="hist-note-label">${t('note_label')}</div><div class="hist-note-text">${safe(h.note)}</div></div>` : ''}
+            <div class="grup-analyze" onclick="event.stopPropagation()">
+              <div class="grup-analyze-head">${t('analyze_add')} · ${t('shipment_total')}: <b>${aPred}</b></div>
+              <div class="actual-entry-row">
+                <span class="charge-label">${t('folder_label')}</span>
+                <input class="charge-input actual-folder-input" list="ghFolderSuggest-${safe(h.id)}" id="ghFolder-${safe(h.id)}" value="${aFolder !== '' ? safe(aFolder) : ''}" placeholder="${t('folder_label')}…"/>
+                <datalist id="ghFolderSuggest-${safe(h.id)}">${aFolderOpts}</datalist>
+              </div>
+              <div class="actual-entry-row">
+                <span class="charge-label">${t('actual_palet_label')}</span>
+                <input class="charge-input" type="number" min="0" step="any" id="ghActual-${safe(h.id)}" value="${aActual !== '' ? safe(String(aActual)) : ''}" placeholder="${safe(String(aPred))}"/>
+                <button class="btn-charge-snapshot" onclick="event.stopPropagation();window.__saveGrupArchiveActual('${safe(h.id)}')">${t('save')}</button>
+              </div>
+              <div class="actual-delta" id="ghDelta-${safe(h.id)}">${_actualDeltaHTML(aActual, aPred)}</div>
+            </div>
             <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">${t('members_label')}</div>
             <div class="hist-grup-members">
               ${(h.members || []).map(m => `
@@ -519,6 +537,37 @@ export async function saveActualPalet(id) {
   const idx = historyStore.histCache.findIndex(h => h.id === id);
   if (idx >= 0) historyStore.histCache[idx] = item;
   renderModalActualBlock(item);
+  showToast('✓ ' + t('saved_toast'));
+}
+
+// Arşivlenmiş sevkiyatı (grup_archive) analize al: gerçekleşen total + grup.
+// Boş = analizden çıkar. Tahmin (predictedPalet) arşivde saklı; yoksa üyelerden türetilir.
+export async function saveGrupArchiveActual(id) {
+  const input = document.getElementById('ghActual-' + id);
+  if (!input) return;
+  const item = _getHistById(id);
+  if (!item || item._type !== 'grup_archive') return;
+  const raw = (input.value || '').trim();
+  if (raw === '') {
+    delete item.actualPalet; delete item.statFolder; delete item.analyzedAt;
+  } else {
+    const v = parseFloat(raw);
+    if (isNaN(v) || v < 0) { await alertDialog(t('valid_total_required')); return; }
+    const folder = (document.getElementById('ghFolder-' + id)?.value || '').trim();
+    if (!folder) { await alertDialog(t('folder_required')); return; }
+    if (typeof item.predictedPalet !== 'number') {
+      item.predictedPalet = (item.members || []).reduce((a, m) => a + (m.palets || 0) + (m.existingPalet || 0), 0);
+    }
+    item.actualPalet = v;
+    item.statFolder = folder;
+    item.analyzedAt = nowStr();
+  }
+  await idbPut(STORES.history, item);
+  const idx = historyStore.histCache.findIndex(h => h.id === id);
+  if (idx >= 0) historyStore.histCache[idx] = item;
+  // Sapmayı yerinde güncelle (akordeon kapanmasın)
+  const deltaEl = document.getElementById('ghDelta-' + id);
+  if (deltaEl) deltaEl.innerHTML = (raw === '') ? '' : _actualDeltaHTML(item.actualPalet, item.predictedPalet);
   showToast('✓ ' + t('saved_toast'));
 }
 

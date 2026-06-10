@@ -1,4 +1,9 @@
 .grup-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;margin-bottom:8px}
+
+/* Sevkiyatı analize alma kutusu (grup kartında + arşiv detayında) */
+.grup-analyze{margin-top:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.grup-analyze-head{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.grup-analyze-head b{color:var(--accent)}
 .grup-card-header{display:flex;align-items:center;gap:10px;padding:12px 14px}
 .grup-icon{width:32px;height:32px;border-radius:8px;background:rgba(91,127,255,.12);border:1px solid rgba(91,127,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .grup-icon svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
