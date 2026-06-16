@@ -390,9 +390,9 @@ export function openDeliveryModal(item, src) {
   document.getElementById('modalDate').textContent = date;
   document.getElementById('modalPkg').textContent = totalPkg;
   document.getElementById('modalPalet').textContent = existingPalet > 0 ? totalPaletDisp : palets;
-  // avg paket/palet KPI'da gösterilen palet sayısıyla tutarlı olmalı
-  const denomPalet = existingPalet > 0 ? totalPaletDisp : palets;
-  const avgPpp = denomPalet > 0 ? Math.round(totalPkg / denomPalet) : 0;
+  // Ortalama paket/palet: yalnızca HESAPLANAN palete bölünür (mevcut palet DAHİL EDİLMEZ) —
+  // Hesaplama ekranıyla tutarlı. Mevcut paletler sahada zaten var; paketleme yoğunluğuna girmez.
+  const avgPpp = palets > 0 ? Math.round(totalPkg / palets) : 0;
   document.getElementById('modalFill').textContent = avgPpp;
   document.getElementById('modalLblPkg').textContent = t('kpi_pkg');
   document.getElementById('modalLblPalet').textContent = t('kpi_palets');
